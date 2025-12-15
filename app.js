@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupEmployeeView(invoices) {
         // Reset Labels
         document.querySelector('.stat-card .stat-icon.income').nextElementSibling.querySelector('h3').textContent = "Pagado hasta la fecha"; // More accurate
-        document.querySelector('.stat-card .stat-icon.bonus').nextElementSibling.querySelector('h3').textContent = "Total comisiones a la fecha";
+        document.querySelector('.stat-card .stat-icon.bonus').nextElementSibling.querySelector('h3').textContent = "Total Comisiones hasta la fecha";
 
         calculateStats(invoices);
     }
