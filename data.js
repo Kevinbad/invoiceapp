@@ -5,7 +5,6 @@ const DB = {
 };
 
 // --- DATA SERVICE (GOOGLE SHEETS INTEGRATION) ---
-// --- DATA SERVICE (GOOGLE SHEETS INTEGRATION) ---
 // Resilience: Try multiple proxies if one fails (Vercel IP blocking)
 const PROXY_LIST = [
     'https://corsproxy.io/?',                         // Fast, usually works
@@ -13,8 +12,11 @@ const PROXY_LIST = [
     'https://thingproxy.freeboard.io/fetch/'          // Backup 2
 ];
 
-const RAW_INVOICES_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQG0-GwS2w16Lbb9T91MiYAbbTR5bz4Q21BRFJV70bwysJHlKZ-JQHv_J3GqNgK-mZGsiLKxgJo_VYS/pub?gid=1887415643&single=true&output=csv';
-const RAW_USERS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQG0-GwS2w16Lbb9T91MiYAbbTR5bz4Q21BRFJV70bwysJHlKZ-JQHv_J3GqNgK-mZGsiLKxgJo_VYS/pub?gid=0&single=true&output=csv';
+// USER PROVIDED ID: 1DN1xCFMW5Ol4TvYa77VNLkxQjR0Z2Fam8w0rIy5Q-kE
+// Using /export format for direct access (Requires "Anyone with link can view")
+const SPREADSHEET_ID = '1DN1xCFMW5Ol4TvYa77VNLkxQjR0Z2Fam8w0rIy5Q-kE';
+const RAW_INVOICES_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=1887415643`;
+const RAW_USERS_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=0`;
 
 // Helper: Try proxies sequentially
 async function fetchCSV(googleUrl) {
