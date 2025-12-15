@@ -366,8 +366,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (logoData) {
             try {
                 // Add logo with rounded corners styling is hard in PDF, just adding raw image
-                // x=10, y=5, w=40, h=40 (approx)
-                doc.addImage(logoData, 'PNG', 10, 5, 40, 40, undefined, 'FAST');
+                // x=10, y=5, w=25, h=25 (Reduced size)
+                doc.addImage(logoData, 'PNG', 10, 5, 25, 25, undefined, 'FAST');
             } catch (e) {
                 console.warn("Could not add logo to PDF", e);
             }
