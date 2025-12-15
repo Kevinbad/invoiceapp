@@ -170,8 +170,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setupEmployeeView(invoices) {
         // Reset Labels
-        document.querySelector('.stat-card .stat-icon.income').nextElementSibling.querySelector('h3').textContent = "Total Salario"; // More accurate
-        document.querySelector('.stat-card .stat-icon.bonus').nextElementSibling.querySelector('h3').textContent = "Total Comisiones";
+        document.querySelector('.stat-card .stat-icon.income').nextElementSibling.querySelector('h3').textContent = "Pagado hasta la fecha"; // More accurate
+        document.querySelector('.stat-card .stat-icon.bonus').nextElementSibling.querySelector('h3').textContent = "Total comisiones a la fecha";
 
         calculateStats(invoices);
     }
