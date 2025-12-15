@@ -338,7 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!inv) return;
 
         // Load Logo
-        const logoData = await loadImageBase64('IMG/logo.jpg');
+        const logoData = await loadImageBase64('IMG/logo2.jpg');
 
         // Create PDF
         const doc = new jsPDF();
