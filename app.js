@@ -313,10 +313,31 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- PDF GENERATION (Individual) ---
-    window.generatePDF = (invoiceId) => {
+    // Helper to load image as Base64
+    const loadImageBase64 = (url) => {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.setAttribute('crossOrigin', 'anonymous');
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                resolve(canvas.toDataURL('image/jpeg'));
+            };
+            img.onerror = () => resolve(null); // Fail gracefully
+            img.src = url;
+        });
+    };
+
+    window.generatePDF = async (invoiceId) => {
         const { jsPDF } = window.jspdf;
         const inv = DB.invoices.find(i => i.id === invoiceId);
         if (!inv) return;
+
+        // Load Logo
+        const logoData = await loadImageBase64('IMG/logo.jpg');
 
         // Create PDF
         const doc = new jsPDF();
@@ -335,6 +356,17 @@ document.addEventListener('DOMContentLoaded', () => {
         // 1. Header Area
         doc.setFillColor(15, 23, 42); // Dark Navy Background
         doc.rect(0, 0, 210, 50, 'F');
+
+        // LOGO ADDITION (Top Left)
+        if (logoData) {
+            try {
+                // Add logo with rounded corners styling is hard in PDF, just adding raw image
+                // x=10, y=5, w=40, h=40 (approx)
+                doc.addImage(logoData, 'JPEG', 10, 5, 40, 40, undefined, 'FAST');
+            } catch (e) {
+                console.warn("Could not add logo to PDF", e);
+            }
+        }
 
         // Company Name
         doc.setTextColor(255, 255, 255);
