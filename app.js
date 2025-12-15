@@ -366,16 +366,17 @@ document.addEventListener('DOMContentLoaded', () => {
         doc.setFontSize(12);
         doc.text(DB.users.find(u => u.id === inv.userId)?.fullName || 'Employee', 20, 66);
 
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
-        doc.text(DB.users.find(u => u.id === inv.userId)?.email || '', 20, 71);
+        // Email removed per user request
+        // doc.setFontSize(10);
+        // doc.setFont('helvetica', 'normal');
+        // doc.text(DB.users.find(u => u.id === inv.userId)?.email || '', 20, 71);
 
-        // Context Message
+        // Context Message (Adjusted Y position since email is gone)
         doc.setTextColor(100, 116, 139);
-        doc.text(`Payment for the month of ${monthName} ${year}`, 20, 82);
+        doc.text(`Payment for the month of ${monthName} ${year}`, 20, 75); // Moved up from 82
 
         // 4. Line Items Table
-        let y = 95;
+        let y = 90; // Moved up slightly
 
         // Header Bar
         doc.setFillColor(99, 102, 241); // Indigo
@@ -408,23 +409,7 @@ document.addEventListener('DOMContentLoaded', () => {
         doc.setTextColor(99, 102, 241);
         doc.text(formatCurrency(inv.amount), 185, y, { align: 'right' });
 
-        // 6. Signatures
-        const finalY = 250; // Use a fixed lower position for the single signature
-
-        doc.setDrawColor(203, 213, 225);
-        doc.line(75, finalY, 135, finalY); // Center Line (Length 60)
-
-        // "Signature" style - Bold Name above the line
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(15, 23, 42);
-        doc.text("Kevin Barros", 105, finalY - 4, { align: 'center' }); // Slightly above line
-
-        // Title below the line
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(148, 163, 184);
-        doc.text("CBO Solvenza Solutions", 105, finalY + 5, { align: 'center' });
+        // 6. Signatures REMOVED per user request
 
         // Save
         doc.save(`Solvenza_Receipt_${inv.id}.pdf`);
