@@ -6,7 +6,8 @@ const DB = {
 
 // --- DATA SERVICE (GOOGLE SHEETS INTEGRATION) ---
 // We use a CORS Proxy to avoid "Failed to fetch" errors when running locally
-const PROXY_URL = 'https://corsproxy.io/?';
+// Switching to allorigins.win as corsproxy.io filters Vercel traffic
+const PROXY_URL = 'https://api.allorigins.win/raw?url=';
 const RAW_INVOICES_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQG0-GwS2w16Lbb9T91MiYAbbTR5bz4Q21BRFJV70bwysJHlKZ-JQHv_J3GqNgK-mZGsiLKxgJo_VYS/pub?gid=1887415643&single=true&output=csv';
 const RAW_USERS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQG0-GwS2w16Lbb9T91MiYAbbTR5bz4Q21BRFJV70bwysJHlKZ-JQHv_J3GqNgK-mZGsiLKxgJo_VYS/pub?gid=0&single=true&output=csv';
 
@@ -18,6 +19,10 @@ const DataService = {
         try {
             const response = await fetch(USERS_CSV_URL);
             const csvText = await response.text();
+
+            if (csvText.trim().startsWith('<')) {
+                throw new Error("Proxy returned HTML instead of CSV (Access Denied)");
+            }
 
             // Parse CSV: Nombre Completo, Usuario Generado, Contraseña
             const rows = csvText.split('\n').map(row => row.split(','));
@@ -73,6 +78,10 @@ const DataService = {
         try {
             const response = await fetch(INVOICES_CSV_URL);
             const csvText = await response.text();
+
+            if (csvText.trim().startsWith('<')) {
+                throw new Error("Proxy returned HTML instead of CSV (Access Denied)");
+            }
 
             const rows = csvText.split('\n').map(row => row.split(','));
             const dataRows = rows.slice(1).filter(r => r.length > 1);

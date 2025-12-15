@@ -40,8 +40,7 @@ body {
     left: -10%;
     width: 60vw;
     height: 60vh;
-    /* User requested #01494B -> rgb(1, 73, 75) */
-    background: radial-gradient(circle, rgba(1, 73, 75, 0.6) 0%, rgba(0, 0, 0, 0) 70%);
+    background: radial-gradient(circle, var(--primary-glow) 0%, rgba(0, 0, 0, 0) 70%);
     filter: blur(80px);
     z-index: -1;
     animation: float 10s ease-in-out infinite alternate;
@@ -53,9 +52,7 @@ body {
     right: -10%;
     width: 50vw;
     height: 50vh;
-    /* Using slightly lighter version for depth or same? User said "el color". 
-       Let's use the same base but lower opacity for the second blob. */
-    background: radial-gradient(circle, rgba(1, 73, 75, 0.4) 0%, rgba(0, 0, 0, 0) 70%);
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, rgba(0, 0, 0, 0) 70%);
     filter: blur(80px);
     z-index: -1;
     animation: float 8s ease-in-out infinite alternate-reverse;
@@ -195,8 +192,7 @@ button.btn-primary {
     width: 100%;
     padding: 1rem;
     margin-top: 1rem;
-    /* User requested #01494B. Using a subtle gradient for depth */
-    background: linear-gradient(135deg, #01494B 0%, #013738 100%);
+    background: linear-gradient(135deg, var(--primary) 0%, #4338ca 100%);
     border: none;
     border-radius: 12px;
     color: white;
