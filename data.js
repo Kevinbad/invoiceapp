@@ -18,9 +18,13 @@ const RAW_USERS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQG0-GwS2
 
 // Helper: Try proxies sequentially
 async function fetchCSV(googleUrl) {
+    // Cache Busting: Unique timestamp
+    const timestamp = `&_t=${Date.now()}`;
+
     for (const proxy of PROXY_LIST) {
         try {
-            const url = proxy + encodeURIComponent(googleUrl);
+            // Append timestamp to Google URL to force fresh data from Sheet
+            const url = proxy + encodeURIComponent(googleUrl + timestamp);
             const response = await fetch(url);
 
             // Validate HTTP Status
@@ -149,7 +153,13 @@ const DataService = {
                 };
 
                 const employeeName = (row[3] || "").trim();
-                const matchedUser = DB.users.find(u => normalizeString(u.fullName) === normalizeString(employeeName));
+
+                // FUZZY MATCH: Check strict equality OR containment (e.g. "Kevin" matches "Kevin Barros")
+                const matchedUser = DB.users.find(u => {
+                    const uName = normalizeString(u.fullName);
+                    const iName = normalizeString(employeeName);
+                    return uName === iName || uName.includes(iName) || iName.includes(uName);
+                });
 
                 // Items Calculation
                 const items = [];
