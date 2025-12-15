@@ -629,4 +629,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         doc.save(`Solvenza_Report_${capitalizedMonth}_${year}.pdf`);
     };
+
+    // Initialize Session
+    checkSession();
 });
