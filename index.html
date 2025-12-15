@@ -10,6 +10,8 @@
     <!-- jsPDF CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -101,10 +103,21 @@
                     </div>
                     <div class="glass-card stat-card">
                         <div class="stat-icon bonus"><i class="ph-fill ph-trend-up"></i></div>
-                        <div>
+                        <div style="flex-grow: 1;">
                             <h3>Comisiones (Mes)</h3>
                             <p class="stat-value" id="commission-amount">$0.00</p>
                         </div>
+                        <button id="btn-month-report" class="btn-download hidden" title="Descargar Reporte Mensual">
+                            <i class="ph-bold ph-file-pdf"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Chart Section -->
+                <div class="glass-card chart-container" style="margin-bottom: 2rem;">
+                    <h3>Tendencia de Ingresos</h3>
+                    <div style="height: 300px; position: relative;">
+                        <canvas id="incomeChart"></canvas>
                     </div>
                 </div>
 

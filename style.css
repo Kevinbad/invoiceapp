@@ -297,6 +297,32 @@ button.btn-primary:active {
     margin-bottom: 3rem;
 }
 
+/* CHART */
+.chart-container {
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.chart-container h3 {
+    margin-bottom: 1.5rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.chart-container h3::before {
+    content: '';
+    display: block;
+    width: 4px;
+    height: 24px;
+    background: var(--primary);
+    border-radius: 4px;
+}
+
 /* TABLE STYLES */
 .table-card {
     padding: 0;
