@@ -5,24 +5,49 @@ const DB = {
 };
 
 // --- DATA SERVICE (GOOGLE SHEETS INTEGRATION) ---
-// We use a CORS Proxy to avoid "Failed to fetch" errors when running locally
-// Switching to allorigins.win as corsproxy.io filters Vercel traffic
-const PROXY_URL = 'https://api.allorigins.win/raw?url=';
+// --- DATA SERVICE (GOOGLE SHEETS INTEGRATION) ---
+// Resilience: Try multiple proxies if one fails (Vercel IP blocking)
+const PROXY_LIST = [
+    'https://corsproxy.io/?',                         // Fast, usually works
+    'https://api.allorigins.win/raw?url=',            // Backup 1
+    'https://thingproxy.freeboard.io/fetch/'          // Backup 2
+];
+
 const RAW_INVOICES_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQG0-GwS2w16Lbb9T91MiYAbbTR5bz4Q21BRFJV70bwysJHlKZ-JQHv_J3GqNgK-mZGsiLKxgJo_VYS/pub?gid=1887415643&single=true&output=csv';
 const RAW_USERS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQG0-GwS2w16Lbb9T91MiYAbbTR5bz4Q21BRFJV70bwysJHlKZ-JQHv_J3GqNgK-mZGsiLKxgJo_VYS/pub?gid=0&single=true&output=csv';
 
-const INVOICES_CSV_URL = PROXY_URL + encodeURIComponent(RAW_INVOICES_URL);
-const USERS_CSV_URL = PROXY_URL + encodeURIComponent(RAW_USERS_URL);
+// Helper: Try proxies sequentially
+async function fetchCSV(googleUrl) {
+    for (const proxy of PROXY_LIST) {
+        try {
+            const url = proxy + encodeURIComponent(googleUrl);
+            const response = await fetch(url);
+
+            // Validate HTTP Status
+            if (!response.ok) throw new Error(`Status ${response.status}`);
+
+            const text = await response.text();
+
+            // Validate Content (Detect HTML errors like "Access Denied")
+            if (text.trim().startsWith('<') || text.includes('DOCTYPE')) {
+                throw new Error("Proxy returned HTML error");
+            }
+
+            return text; // Success!
+
+        } catch (e) {
+            console.warn(`Proxy ${proxy} failed:`, e);
+            // Continue to next proxy
+        }
+    }
+    throw new Error("All proxies failed to fetch data.");
+}
 
 const DataService = {
     login: async (username, password) => {
         try {
-            const response = await fetch(USERS_CSV_URL);
-            const csvText = await response.text();
-
-            if (csvText.trim().startsWith('<')) {
-                throw new Error("Proxy returned HTML instead of CSV (Access Denied)");
-            }
+            // Use Fallback Fetch
+            const csvText = await fetchCSV(RAW_USERS_URL);
 
             // Parse CSV: Nombre Completo, Usuario Generado, Contraseña
             const rows = csvText.split('\n').map(row => row.split(','));
@@ -76,12 +101,7 @@ const DataService = {
 
     getInvoices: async (userId) => {
         try {
-            const response = await fetch(INVOICES_CSV_URL);
-            const csvText = await response.text();
-
-            if (csvText.trim().startsWith('<')) {
-                throw new Error("Proxy returned HTML instead of CSV (Access Denied)");
-            }
+            const csvText = await fetchCSV(RAW_INVOICES_URL);
 
             const rows = csvText.split('\n').map(row => row.split(','));
             const dataRows = rows.slice(1).filter(r => r.length > 1);
