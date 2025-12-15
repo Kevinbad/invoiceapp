@@ -515,3 +515,20 @@ button.btn-primary:active {
     align-items: center;
     justify-content: center;
 }
+
+/* Custom Logo Styling */
+.logo-custom {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    margin-bottom: 1rem;
+    border-radius: 20px;
+    mix-blend-mode: screen;
+    /* Remove black background */
+    filter: drop-shadow(0 0 10px var(--primary-glow));
+}
+
+.logo-area {
+    isolation: isolate;
+    /* Ensure blend mode works */
+}
