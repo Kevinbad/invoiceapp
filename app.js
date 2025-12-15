@@ -133,14 +133,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const invoices = await DataService.getInvoices(user.id);
 
             // REMOVE LOAD STATE
+            // REMOVE LOAD STATE
             statValues.forEach(el => el.classList.remove('skeleton'));
-
-            renderInvoices(invoices);
 
             // Determine Context (Admin vs Employee)
             if (user.role === 'Administrator') {
                 setupAdminView(invoices);
             } else {
+                renderInvoices(invoices); // ONLY RENDER TABLE FOR EMPLOYEES
                 setupEmployeeView(invoices);
             }
 
@@ -161,6 +161,8 @@ document.addEventListener('DOMContentLoaded', () => {
         defaultStatsGrid.classList.add('hidden');
         // Hide default chart container
         if (defaultChartView) defaultChartView.classList.add('hidden');
+        // Hide default Invoices Table
+        invoicesList.closest('.table-container').classList.add('hidden');
 
         adminStatsGrid.classList.remove('hidden');
 
@@ -431,6 +433,9 @@ document.addEventListener('DOMContentLoaded', () => {
         adminLeaderboardView.classList.add('hidden');
         adminCalendarView.classList.add('hidden'); // Hide calendar
         document.querySelector('.dashboard-content .chart-container').classList.remove('hidden');
+
+        // Restore Default Table
+        invoicesList.closest('.table-container').classList.remove('hidden');
 
         // Reset Labels
         defaultStatsGrid.querySelectorAll('.stat-card')[0].querySelector('h3').textContent = "Pagado hasta la fecha"; // More accurate
