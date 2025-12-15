@@ -324,7 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 canvas.height = img.height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0);
-                resolve(canvas.toDataURL('image/jpeg'));
+                resolve(canvas.toDataURL('image/png'));
             };
             img.onerror = () => resolve(null); // Fail gracefully
             // Cache Busting: Force new image load
