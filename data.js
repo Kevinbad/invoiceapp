@@ -181,6 +181,8 @@ const DataService = {
                     employeeName: employeeName,
                     date: dateStr,
                     concept: `Payment ${monthLabel}`,
+                    salary: salary,
+                    commission: commission,
                     amount: total,
                     status: (row[6] || "Pagado").trim(),
                     items: items

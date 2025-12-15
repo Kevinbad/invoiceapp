@@ -411,43 +411,55 @@ document.addEventListener('DOMContentLoaded', () => {
         // doc.setFont('helvetica', 'normal');
         // doc.text(DB.users.find(u => u.id === inv.userId)?.email || '', 20, 71);
 
-        // Context Message (Adjusted Y position since email is gone)
+        // Context Message
         doc.setTextColor(100, 116, 139);
-        doc.text(`Payment for the month of ${monthName} ${year}`, 20, 75); // Moved up from 82
+        doc.text(`Payment for the month of ${monthName} ${year}`, 20, 75);
 
-        // 4. Line Items Table
-        let y = 90; // Moved up slightly
-
-        // Header Bar
-        doc.setFillColor(99, 102, 241); // Indigo
-        doc.rect(20, y - 6, 170, 10, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFont('helvetica', 'bold');
-        doc.text("DESCRIPTION", 25, y);
-        doc.text("AMOUNT", 185, y, { align: 'right' });
-
-        // Items
-        y += 15;
-        doc.setTextColor(51, 65, 85);
-        doc.setFont('helvetica', 'normal');
-
-        inv.items.forEach(item => {
-            doc.text(item.desc, 25, y);
-            doc.text(formatCurrency(item.amount), 185, y, { align: 'right' });
-            y += 10;
+        // 4. Line Items Table (AutoTable)
+        doc.autoTable({
+            startY: 85,
+            head: [['Description', 'Bi-weekly Period', 'Commissions', 'Total Amount']],
+            body: [[
+                inv.concept,
+                formatCurrency(inv.salary),
+                formatCurrency(inv.commission),
+                formatCurrency(inv.amount)
+            ]],
+            theme: 'striped',
+            headStyles: {
+                fillColor: [99, 102, 241],
+                textColor: 255,
+                halign: 'center',
+                fontStyle: 'bold'
+            },
+            bodyStyles: {
+                textColor: [51, 65, 85],
+                halign: 'center',
+                minCellHeight: 12
+            },
+            columnStyles: {
+                0: { halign: 'left', fontStyle: 'bold' }, // Desc
+                3: { halign: 'right', fontStyle: 'bold' } // Total
+            }
         });
 
-        // 5. Total
-        y += 10;
-        doc.setDrawColor(200, 200, 200);
-        doc.line(20, y, 190, y);
-        y += 10;
-        doc.setFontSize(14);
+        // 5. Sign-off area (Adjusted Y)
+        const finalY = doc.lastAutoTable.finalY + 40;
+
+        doc.setDrawColor(203, 213, 225);
+        doc.line(75, finalY, 135, finalY); // Center Line
+
+        doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(15, 23, 42);
-        doc.text("TOTAL PAID", 130, y, { align: 'right' });
-        doc.setTextColor(99, 102, 241);
-        doc.text(formatCurrency(inv.amount), 185, y, { align: 'right' });
+        doc.text("Kevin Barros", 105, finalY - 4, { align: 'center' });
+
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(148, 163, 184);
+        doc.text("CBO Solvenza Solutions", 105, finalY + 5, { align: 'center' });
+
+        doc.save(`Solvenza_Payment_${fullDate}.pdf`);
 
         // 6. Signatures REMOVED per user request
 
@@ -584,7 +596,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
         doc.save(`Solvenza_Report_${capitalizedMonth}_${year}.pdf`);
     };
-
-    // Initialize Session
-    checkSession();
 });
