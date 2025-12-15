@@ -113,8 +113,8 @@ const DataService = {
             const dataRows = rows.slice(1).filter(r => r.length > 1);
 
             const allInvoices = dataRows.map((row, index) => {
-                // CSV Mapping: 
-                // 0: ID_Pago, 1: Usuario, 2: Fecha, 3: Empleado, 4: Salario, 5: Comision, 6: Total, 7: Estado
+                // CSV Mapping Corrected (Verified via direct export): 
+                // 0: ID_Pago, 1: Fecha, 2: Empleado, 3: Salario, 4: Comision, 5: Total, 6: Estado
 
                 const parseMoney = (val) => {
                     if (!val) return 0;
@@ -122,20 +122,22 @@ const DataService = {
                     return parseFloat(val.replace(/[$,"]/g, '')) || 0;
                 };
 
-                const salary = parseMoney(row[4]);
-                const commission = parseMoney(row[5]);
-                const total = parseMoney(row[6]);
+                const salary = parseMoney(row[3]);
+                const commission = parseMoney(row[4]);
+                const total = parseMoney(row[5]);
 
-                // Date Parsing M/D/YYYY
+                // Date Parsing M/D/YYYY from Index 1
                 // Note: CSV output from Sheets usually standardizes date format, but we handle M/D/Y
-                const dateParts = (row[2] || "").split('/');
+                const dateParts = (row[1] || "").split('/');
                 let dateStr = new Date().toISOString().split('T')[0];
                 let monthLabel = "Unknown";
 
                 if (dateParts.length === 3) {
-                    const y = dateParts[2].trim();
                     const m = dateParts[0].trim().padStart(2, '0');
                     const d = dateParts[1].trim().padStart(2, '0');
+                    const y = dateParts[2].trim();
+                    // Check if format is DD/MM/YYYY vs MM/DD/YYYY? 
+                    // Example in chunk: "6/15/2025" -> Month 6 (June). So MM/DD/YYYY.
                     dateStr = `${y}-${m}-${d}`;
 
                     const dateObj = new Date(dateStr);
@@ -154,7 +156,7 @@ const DataService = {
                         .trim();
                 };
 
-                const employeeName = (row[3] || "").trim();
+                const employeeName = (row[2] || "").trim();
 
                 // FUZZY MATCH: Check strict equality OR containment (e.g. "Kevin" matches "Kevin Barros")
                 const matchedUser = DB.users.find(u => {
@@ -180,7 +182,7 @@ const DataService = {
                     date: dateStr,
                     concept: `Payment ${monthLabel}`,
                     amount: total,
-                    status: (row[7] || "Pagado").trim(),
+                    status: (row[6] || "Pagado").trim(),
                     items: items
                 };
             });
