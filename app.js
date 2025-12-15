@@ -443,28 +443,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // 5. Sign-off area (Adjusted Y)
-        const finalY = doc.lastAutoTable.finalY + 40;
+        // Debug Data
+        console.log("PDF Invoice Data:", inv);
 
-        doc.setDrawColor(203, 213, 225);
-        doc.line(75, finalY, 135, finalY); // Center Line
-
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(15, 23, 42);
-        doc.text("Kevin Barros", 105, finalY - 4, { align: 'center' });
-
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(148, 163, 184);
-        doc.text("CBO Solvenza Solutions", 105, finalY + 5, { align: 'center' });
+        // 5. Sign-off / Footer REMOVED per user request
 
         doc.save(`Solvenza_Payment_${fullDate}.pdf`);
-
-        // 6. Signatures REMOVED per user request
-
-        // Save
-        doc.save(`Solvenza_Receipt_${inv.id}.pdf`);
     };
 
     // --- ADMIN REPORT GENERATION ---
