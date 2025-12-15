@@ -30,7 +30,6 @@
     <div class="bg-gradient-2"></div>
 
     <main id="app-container">
-        <!-- LOGIN VIEW -->
         <section id="login-view" class="view active">
             <div class="glass-card login-card">
                 <div class="brand-header">
@@ -67,6 +66,22 @@
                         <p id="login-error" class="error-msg hidden">Credenciales incorrectas. Intenta de nuevo.</p>
                     </form>
                 </div>
+        </section>
+
+        <!-- Error View (Offline/Fetch Failed) -->
+        <section id="error-view" class="view hidden">
+            <div class="glass-card error-card" style="text-align: center; padding: 3rem;">
+                <div style="font-size: 4rem; color: #f87171; margin-bottom: 1rem;">
+                    <i class="ph-duotone ph-wifi-slash"></i>
+                </div>
+                <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Sin Conexión</h2>
+                <p style="color: var(--text-muted); margin-bottom: 2rem;">No pudimos cargar tus datos. Verifica tu
+                    internet.</p>
+                <button onclick="location.reload()" class="btn-primary" style="margin: 0 auto;">
+                    <i class="ph-bold ph-arrow-clockwise"></i>
+                    <span>Reintentar</span>
+                </button>
+            </div>
         </section>
 
         <!-- DASHBOARD VIEW -->

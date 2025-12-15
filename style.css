@@ -479,3 +479,39 @@ button.btn-primary:active {
         padding: 1.25rem;
     }
 }
+
+/* Skeleton Loader */
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.skeleton {
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.1) 37%, rgba(255, 255, 255, 0.05) 63%);
+    background-size: 400% 100%;
+    animation: shimmer 1.4s ease infinite;
+    border-radius: 4px;
+    color: transparent !important;
+}
+
+.skeleton-text {
+    height: 1em;
+    width: 70%;
+    margin-bottom: 0.5rem;
+}
+
+.skeleton-card {
+    min-height: 120px;
+}
+
+/* Error View Transition */
+#error-view {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

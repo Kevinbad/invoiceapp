@@ -89,30 +89,46 @@ document.addEventListener('DOMContentLoaded', () => {
         loginView.style.opacity = '0';
         setTimeout(() => {
             switchView('dashboard');
-            loginView.style.opacity = '1'; // Reset for next time
+            loginView.style.opacity = '1';
         }, 300);
 
         // Populate User Info
         userNameDisplay.textContent = user.fullName;
-        welcomeMsg.textContent = `Hola, ${user.fullName.split(' ')[0]}`;
+        welcomeMsg.textContent = `Hola, ${user.fullName.split(' ')[0]}`; // Safe split
 
-        // Date
         const now = new Date();
         currentDateDisplay.textContent = `Hoy es ${now.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}`;
 
-        // Load Data
-        const invoices = await DataService.getInvoices(user.id);
-        renderInvoices(invoices);
+        // LOAD STATE: Show Skeletons
+        const statValues = document.querySelectorAll('.stat-value');
+        statValues.forEach(el => el.classList.add('skeleton'));
+        invoicesList.innerHTML = '<tr><td colspan="5" class="skeleton skeleton-card"></td></tr>'; // Skeleton Row
 
-        // Determine Context (Admin vs Employee)
-        if (user.role === 'Administrator') {
-            setupAdminView(invoices);
-        } else {
-            setupEmployeeView(invoices);
+        try {
+            // Load Data
+            const invoices = await DataService.getInvoices(user.id);
+
+            // REMOVE LOAD STATE
+            statValues.forEach(el => el.classList.remove('skeleton'));
+
+            renderInvoices(invoices);
+
+            // Determine Context (Admin vs Employee)
+            if (user.role === 'Administrator') {
+                setupAdminView(invoices);
+            } else {
+                setupEmployeeView(invoices);
+            }
+
+            // Render Chart
+            renderIncomeChart(invoices);
+
+        } catch (error) {
+            console.error(error);
+            // SHOW ERROR VIEW
+            dashboardView.classList.add('hidden');
+            document.getElementById('error-view').classList.remove('hidden');
         }
-
-        // Render Chart (Works for both contexts as it just visualizes the invoice list)
-        renderIncomeChart(invoices);
     }
 
     function setupAdminView(invoices) {
