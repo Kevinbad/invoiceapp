@@ -15,12 +15,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentDateDisplay = document.getElementById('current-date');
     const lastPayAmount = document.getElementById('last-pay-amount');
     const commissionAmount = document.getElementById('commission-amount');
-    const totalYearAmount = document.getElementById('total-year-amount'); // NEW
     const invoicesList = document.getElementById('invoices-list');
+
+    // Admin Elements
+    const adminStatsGrid = document.getElementById('admin-stats-grid');
+    const defaultStatsGrid = document.querySelector('.stats-grid:not(.admin-grid)'); // Select default one
+    const adminChartsView = document.getElementById('admin-charts-view');
+    const defaultChartView = document.querySelector('.chart-container:not(.charts-split .chart-container)');
+    const adminLeaderboardView = document.getElementById('admin-leaderboard-view');
+    const adminLeaderboardList = document.getElementById('admin-leaderboard-list');
+    const adminCalendarView = document.getElementById('admin-calendar-view'); // NEW
+    const calendarGrid = document.getElementById('calendar-grid'); // NEW
+    const calMonthYear = document.getElementById('cal-month-year'); // NEW
+    const btnCalPrev = document.getElementById('cal-prev'); // NEW
+    const btnCalNext = document.getElementById('cal-next'); // NEW
+
+    // Admin KPIs
+    const adminMonthTotal = document.getElementById('admin-month-total');
+    const adminYearProj = document.getElementById('admin-year-proj');
+    const adminCommRatio = document.getElementById('admin-comm-ratio');
+    const adminTotalEmployees = document.getElementById('admin-total-employees');
 
     // State
     let currentUser = null;
-    let incomeChartInstance = null; // Store chart instance
+    let currentCalendarDate = new Date(); // State for calendar
+    let incomeChartInstance = null;
+    let adminTrendChartInstance = null;
+    let adminDistChartInstance = null;
 
     // --- UTILS ---
     const formatCurrency = (amount) => {
@@ -135,43 +156,283 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function setupAdminView(invoices) {
-        // Change Labels
-        document.querySelector('.stat-card .stat-icon.income').nextElementSibling.querySelector('h3').textContent = "Total Dispersado";
-        document.querySelector('.stat-card .stat-icon.bonus').nextElementSibling.querySelector('h3').textContent = "Pagos del Mes";
-        document.querySelector('.dashboard-header h2').textContent = `Hola, ${currentUser.fullName}`; // Show full name for Admin
+        // TOGGLE VIEW: Show Admin Grid, Hide Default
+        defaultStatsGrid.classList.add('hidden');
+        defaultChartView.parentElement.classList.add('hidden'); // Hide default chart container wrapper if needed, or just specific chart
+        // Actually, looking at HTML structure, we might need to target the chart container directly
+        document.querySelector('.dashboard-content .chart-container').classList.add('hidden');
 
-        // 1. Total All Time
-        const totalPaid = invoices.reduce((sum, inv) => sum + inv.amount, 0);
-        lastPayAmount.textContent = formatCurrency(totalPaid);
+        adminStatsGrid.classList.remove('hidden');
+        adminChartsView.classList.remove('hidden');
+        adminLeaderboardView.classList.remove('hidden');
+        adminCalendarView.classList.remove('hidden'); // Show Calendar
 
-        // 2. Total This Month
-        const currentMonthIndex = new Date().getMonth(); // 0-11
-        const totalMonth = invoices.filter(inv => {
+        document.querySelector('.dashboard-header h2').textContent = `Panel de Control (Admin)`;
+
+        // --- 1. KPI CALCULATIONS ---
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+
+        // Filter current month data
+        const currentMonthInvoices = invoices.filter(inv => {
             const d = new Date(inv.date);
-            return d.getMonth() === currentMonthIndex; // Simple check, ignores year for simplicity or needs robust check
-        }).reduce((sum, inv) => sum + inv.amount, 0);
+            return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+        });
 
-        // Use the second card for Monthly Total instead of "Commissions"
-        commissionAmount.textContent = formatCurrency(totalMonth);
+        const totalMonthPaid = currentMonthInvoices.reduce((sum, inv) => sum + inv.amount, 0);
 
-        // Show Download Button
-        const btnReport = document.getElementById('btn-month-report');
-        if (btnReport) {
-            btnReport.classList.remove('hidden');
-            // Remove old listener to avoid duplicates if re-rendering
-            const newBtn = btnReport.cloneNode(true);
-            btnReport.parentNode.replaceChild(newBtn, btnReport);
+        // Annual Projection (Avg * 12)
+        const totalYearPaid = invoices.filter(inv => new Date(inv.date).getFullYear() === currentYear)
+            .reduce((sum, inv) => sum + inv.amount, 0);
+        const monthsActive = currentMonth + 1; // Simple estimation
+        const projectedYear = (totalYearPaid / monthsActive) * 12;
 
-            newBtn.addEventListener('click', () => {
-                generateMonthlyReport(invoices);
+        // Commission Ratio
+        const totalBase = currentMonthInvoices.reduce((sum, inv) => sum + (inv.salary || 0), 0);
+        const totalComm = currentMonthInvoices.reduce((sum, inv) => sum + (inv.commission || 0), 0);
+        const loopTotal = totalBase + totalComm;
+        const ratio = loopTotal > 0 ? (totalComm / loopTotal) * 100 : 0;
+
+        // UPDATE UI
+        adminMonthTotal.textContent = formatCurrency(totalMonthPaid);
+        adminYearProj.textContent = formatCurrency(projectedYear);
+        adminCommRatio.textContent = ratio.toFixed(1) + '%';
+
+        // Total Employees (Exclude 'Administrator' or just Solvenza Master)
+        // Let's count Active Employees (Role != Administrator)
+        const totalEmployees = DB.users.filter(u => u.role !== 'Administrator').length;
+        adminTotalEmployees.textContent = totalEmployees;
+
+        // --- 2. ADMIN CHARTS ---
+        renderAdminCharts(invoices, currentYear);
+
+        // --- 3. LEADERBOARD ---
+        renderLeaderboard(currentMonthInvoices);
+
+        // --- 4. CALENDAR ---
+        renderCalendar(invoices, currentCalendarDate);
+
+        // Calendar Navigation Events (Remove old listeners to prevent duplicates if re-called)
+        const newPrev = btnCalPrev.cloneNode(true);
+        const newNext = btnCalNext.cloneNode(true);
+        btnCalPrev.parentNode.replaceChild(newPrev, btnCalPrev);
+        btnCalNext.parentNode.replaceChild(newNext, btnCalNext);
+
+        newPrev.addEventListener('click', () => {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+            renderCalendar(invoices, currentCalendarDate);
+        });
+
+        newNext.addEventListener('click', () => {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+            renderCalendar(invoices, currentCalendarDate);
+        });
+
+        // --- 5. EXPORT BUTTON LOGIC (Keep existing) ---
+        // Show Download Button logic stays if needed
+    }
+
+    function renderCalendar(invoices, dateObj) {
+        const year = dateObj.getFullYear();
+        const month = dateObj.getMonth(); // 0-11
+
+        // Header
+        const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+        calMonthYear.textContent = `${monthNames[month]} ${year}`;
+
+        calendarGrid.innerHTML = '';
+
+        // Day Headers
+        const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+        days.forEach(d => {
+            const el = document.createElement('div');
+            el.className = 'cal-day-header';
+            el.textContent = d;
+            calendarGrid.appendChild(el);
+        });
+
+        // Calculations
+        const firstDay = new Date(year, month, 1).getDay(); // 0(Sun) - 6(Sat)
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        // Empty cells for first week
+        for (let i = 0; i < firstDay; i++) {
+            const empty = document.createElement('div');
+            empty.className = 'cal-day empty';
+            calendarGrid.appendChild(empty);
+        }
+
+        // Days
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const invsToday = invoices.filter(inv => inv.date === dateStr);
+            const totalToday = invsToday.reduce((sum, i) => sum + i.amount, 0);
+
+            const dayEl = document.createElement('div');
+            dayEl.className = 'cal-day';
+
+            // Check if today
+            const now = new Date();
+            if (day === now.getDate() && month === now.getMonth() && year === now.getFullYear()) {
+                dayEl.classList.add('today');
+            }
+
+            if (invsToday.length > 0) {
+                dayEl.classList.add('has-payments');
+
+                // Tooltip
+                const tooltip = document.createElement('div');
+                tooltip.className = 'cal-tooltip';
+                tooltip.innerHTML = `${invsToday.length} Pagos<br><b>${formatCurrency(totalToday)}</b>`;
+                dayEl.appendChild(tooltip);
+
+                // Dots
+                const dotsContainer = document.createElement('div');
+                dotsContainer.className = 'payment-dots';
+                // Limit dots to avoid overflow
+                const dotsCount = Math.min(invsToday.length, 5);
+                for (let k = 0; k < dotsCount; k++) {
+                    const dot = document.createElement('div');
+                    dot.className = 'p-dot';
+                    dotsContainer.appendChild(dot);
+                }
+                dayEl.appendChild(dotsContainer);
+            }
+
+            const num = document.createElement('span');
+            num.textContent = day;
+            dayEl.prepend(num); // Add number at top
+
+            calendarGrid.appendChild(dayEl);
+        }
+    }
+
+    function renderAdminCharts(invoices, year) {
+        // CHART 1: Spend Trend (Line)
+        const ctxTrend = document.getElementById('adminTrendChart');
+        if (ctxTrend) {
+            if (adminTrendChartInstance) adminTrendChartInstance.destroy();
+
+            const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+            const dataByMonth = new Array(12).fill(0);
+
+            invoices.filter(i => new Date(i.date).getFullYear() === year).forEach(inv => {
+                dataByMonth[new Date(inv.date).getMonth()] += inv.amount;
+            });
+
+            adminTrendChartInstance = new Chart(ctxTrend, {
+                type: 'line',
+                data: {
+                    labels: monthNames,
+                    datasets: [{
+                        label: 'Dispersión 2025',
+                        data: dataByMonth,
+                        borderColor: '#6366f1', // Indigo
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } } }
+                }
+            });
+        }
+
+        // CHART 2: Distribution (Doughnut)
+        const ctxDist = document.getElementById('adminDistChart');
+        if (ctxDist) {
+            if (adminDistChartInstance) adminDistChartInstance.destroy();
+
+            // Aggregate ALL TIME or THIS YEAR? Let's do THIS YEAR
+            const yearInvoices = invoices.filter(i => new Date(i.date).getFullYear() === year);
+            const totalSal = yearInvoices.reduce((sum, i) => sum + (i.salary || 0), 0);
+            const totalComm = yearInvoices.reduce((sum, i) => sum + (i.commission || 0), 0);
+
+            adminDistChartInstance = new Chart(ctxDist, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Salario Base', 'Comisiones'],
+                    datasets: [{
+                        data: [totalSal, totalComm],
+                        backgroundColor: ['#3b82f6', '#10b981'], // Blue, Emerald
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#cbd5e1' } }
+                    }
+                }
             });
         }
     }
 
+    function renderLeaderboard(monthInvoices) {
+        adminLeaderboardList.innerHTML = '';
+
+        // Group by User
+        const userStats = {};
+        monthInvoices.forEach(inv => {
+            if (!userStats[inv.employeeName]) userStats[inv.employeeName] = 0;
+            userStats[inv.employeeName] += (inv.commission || 0);
+        });
+
+        // Convert to Array & Sort
+        const sorted = Object.entries(userStats)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5); // Top 5
+
+        const totalComms = monthInvoices.reduce((sum, i) => sum + (i.commission || 0), 0);
+
+        sorted.forEach(([name, amount], index) => {
+            if (amount === 0) return; // Skip zero commissions
+
+            const percentage = totalComms > 0 ? (amount / totalComms) * 100 : 0;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="background: rgba(255,255,255,0.1); width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 0.8rem;">
+                            ${index + 1}
+                        </span>
+                        <span>${name}</span>
+                    </div>
+                </td>
+                <td style="text-align: right; font-weight: bold;">${formatCurrency(amount)}</td>
+                <td style="text-align: right;">
+                    <div style="display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem;">
+                        <span style="font-size: 0.9rem; color: var(--text-muted)">${percentage.toFixed(1)}%</span>
+                        <div style="width: 40px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px;">
+                            <div style="width: ${percentage}%; height: 100%; background: #10b981; border-radius: 2px;"></div>
+                        </div>
+                    </div>
+                </td>
+            `;
+            adminLeaderboardList.appendChild(tr);
+        });
+    }
+
     function setupEmployeeView(invoices) {
+        // ENSURE DEFAULT VIEW IS VISIBLE
+        defaultStatsGrid.classList.remove('hidden');
+        adminStatsGrid.classList.add('hidden');
+        adminChartsView.classList.add('hidden');
+        adminLeaderboardView.classList.add('hidden');
+        adminCalendarView.classList.add('hidden'); // Hide calendar
+        document.querySelector('.dashboard-content .chart-container').classList.remove('hidden');
+
         // Reset Labels
-        document.querySelector('.stat-card .stat-icon.income').nextElementSibling.querySelector('h3').textContent = "Pagado hasta la fecha"; // More accurate
-        document.querySelector('.stat-card .stat-icon.bonus').nextElementSibling.querySelector('h3').textContent = "Total Comisiones hasta la fecha";
+        defaultStatsGrid.querySelectorAll('.stat-card')[0].querySelector('h3').textContent = "Pagado hasta la fecha"; // More accurate
+        defaultStatsGrid.querySelectorAll('.stat-card')[1].querySelector('h3').textContent = "Total Comisiones hasta la fecha";
 
         calculateStats(invoices);
     }

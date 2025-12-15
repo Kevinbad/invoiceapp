@@ -129,13 +129,92 @@
                     </div>
                 </div>
 
-                <!-- Chart Section -->
-                <div class="glass-card chart-container" style="margin-bottom: 2rem;">
-                    <h3>Tendencia de Ingresos</h3>
-                    <div style="height: 300px; position: relative;">
-                        <canvas id="incomeChart"></canvas>
+                <!-- ADMIN: Specialized Stats Grid (Hidden by default) -->
+                <div id="admin-stats-grid" class="stats-grid admin-grid hidden">
+                    <div class="glass-card stat-card">
+                        <div class="stat-icon income"><i class="ph-fill ph-money"></i></div>
+                        <div>
+                            <h3>Dispersado (Mes)</h3>
+                            <p class="stat-value" id="admin-month-total">$0.00</p>
+                        </div>
+                    </div>
+                    <div class="glass-card stat-card">
+                        <div class="stat-icon purple"><i class="ph-fill ph-chart-line-up"></i></div>
+                        <div>
+                            <h3>Proyección Anual</h3>
+                            <p class="stat-value" id="admin-year-proj">$0.00</p>
+                        </div>
+                    </div>
+                    <div class="glass-card stat-card">
+                        <div class="stat-icon bonus"><i class="ph-fill ph-percent"></i></div>
+                        <div>
+                            <h3>Ratio Comisiones</h3>
+                            <p class="stat-value" id="admin-comm-ratio">0%</p>
+                        </div>
+                    </div>
+                    <div class="glass-card stat-card">
+                        <div class="stat-icon cyan"><i class="ph-fill ph-users"></i></div>
+                        <div>
+                            <h3>Total Empleados</h3>
+                            <p class="stat-value" id="admin-total-employees">0</p>
+                        </div>
                     </div>
                 </div>
+
+                <!-- ADMIN: Charts Section (Split View) -->
+                <div id="admin-charts-view" class="charts-split hidden">
+                    <div class="glass-card chart-container">
+                        <h3>Tendencia de Pagos</h3>
+                        <div style="height: 250px; position: relative;">
+                            <canvas id="adminTrendChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="glass-card chart-container">
+                        <h3>Distribución de Gasto</h3>
+                        <div style="height: 250px; position: relative;">
+                            <canvas id="adminDistChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ADMIN: Top Performers -->
+                <div id="admin-leaderboard-view" class="glass-card table-container hidden" style="margin-bottom: 2rem;">
+                    <h3>🏆 Top Rendimiento (Comisiones)</h3>
+                    <table class="invoices-table">
+                        <thead>
+                            <tr>
+                                <th>Empleado</th>
+                                <th>Comisiones (Mes)</th>
+                                <th>% del Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-leaderboard-list">
+                            <!-- JS populated -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- ADMIN: Payment Calendar -->
+                <div id="admin-calendar-view" class="glass-card hidden" style="margin-bottom: 2rem; padding: 2rem;">
+                    <div class="calendar-header"
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h3 style="margin: 0;">Calendario de Pagos</h3>
+                        <div class="calendar-nav" style="display: flex; gap: 1rem; align-items: center;">
+                            <button id="cal-prev" class="icon-btn" style="width: 32px; height: 32px;"><i
+                                    class="ph-bold ph-caret-left"></i></button>
+                            <span id="cal-month-year"
+                                style="font-weight: 600; min-width: 120px; text-align: center;">--</span>
+                            <button id="cal-next" class="icon-btn" style="width: 32px; height: 32px;"><i
+                                    class="ph-bold ph-caret-right"></i></button>
+                        </div>
+                    </div>
+                    <div class="calendar-grid" id="calendar-grid">
+                        <!-- JS populated -->
+                    </div>
+                </div> <!-- Chart Section -->
+
+
+                <!-- ADMIN: Moved Original Chart to only show for Employees (will act as toggle) -->
 
                 <!-- Recent Invoices List -->
                 <div class="invoices-section">
