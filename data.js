@@ -49,6 +49,22 @@ async function fetchCSV(googleUrl) {
     throw new Error("All proxies failed to fetch data.");
 }
 
+// Helper: Parse CSV Row handling quoted commas (e.g. "$1,020")
+function parseCSVRow(str) {
+    const arr = [];
+    let quote = false;
+    let start = 0;
+    for (let i = 0; i < str.length; i++) {
+        if (str[i] === '"') quote = !quote;
+        else if (str[i] === ',' && !quote) {
+            arr.push(str.slice(start, i));
+            start = i + 1;
+        }
+    }
+    arr.push(str.slice(start));
+    return arr;
+}
+
 const DataService = {
     login: async (username, password) => {
         try {
@@ -56,7 +72,7 @@ const DataService = {
             const csvText = await fetchCSV(RAW_USERS_URL);
 
             // Parse CSV: Nombre Completo, Usuario Generado, Contraseña
-            const rows = csvText.split('\n').map(row => row.split(','));
+            const rows = csvText.split('\n').map(row => parseCSVRow(row));
             // Skip Header and ensure valid row
             const dataRows = rows.slice(1).filter(r => r.length > 2 && r[1]);
 
@@ -109,7 +125,7 @@ const DataService = {
         try {
             const csvText = await fetchCSV(RAW_INVOICES_URL);
 
-            const rows = csvText.split('\n').map(row => row.split(','));
+            const rows = csvText.split('\n').map(row => parseCSVRow(row));
             const dataRows = rows.slice(1).filter(r => r.length > 1);
 
             const allInvoices = dataRows.map((row, index) => {
