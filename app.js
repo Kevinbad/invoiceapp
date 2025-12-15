@@ -22,6 +22,50 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentUser = null;
     let incomeChartInstance = null; // Store chart instance
 
+    // CONSTANTS
+    const SESSION_DURATION_MS = 5 * 60 * 1000; // 5 Minutes
+
+    // --- SESSION MANAGEMENT ---
+    const saveSession = (user) => {
+        const sessionData = {
+            user: user,
+            expiry: Date.now() + SESSION_DURATION_MS
+        };
+        localStorage.setItem('solvenza_session', JSON.stringify(sessionData));
+    };
+
+    const clearSession = () => {
+        localStorage.removeItem('solvenza_session');
+    };
+
+    const checkSession = () => {
+        const stored = localStorage.getItem('solvenza_session');
+        if (!stored) return;
+
+        try {
+            const session = JSON.parse(stored);
+            if (Date.now() < session.expiry) {
+                // Valid Session
+                currentUser = session.user;
+                // Refresh expiry on activity? Or strict 5 mins? 
+                // For "dure solo 5 mins", simplistic expiry is best, but usually we extend on use.
+                // Let's strict 5 mins from login for now based on request, or extend?
+                // Usually "timeout" means "inactivity". Let's stick to simple expiry for now.
+                // Re-save to extend if active? Let's extend to keep it user friendly if they are working.
+                saveSession(currentUser);
+
+                // Init Dashboard directly
+                initDashboard(currentUser);
+            } else {
+                // Expired
+                clearSession();
+            }
+        } catch (e) {
+            console.error("Session parse error", e);
+            clearSession();
+        }
+    };
+
     // --- UTILS ---
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
@@ -59,9 +103,13 @@ document.addEventListener('DOMContentLoaded', () => {
         loginError.classList.add('hidden');
 
         try {
-            const response = await DataService.login(username, password);
-            currentUser = response.user;
-            initDashboard(currentUser);
+            const result = await DataService.login(username, password);
+            if (result.success) {
+                currentUser = result.user;
+                saveSession(currentUser); // SAVE SESSION
+                initDashboard(currentUser);
+                loginForm.reset();
+            }
         } catch (error) {
             loginError.textContent = error.message;
             loginError.classList.remove('hidden');
@@ -73,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 { transform: 'translateX(0)' }
             ], { duration: 300 });
         } finally {
-            btnLogin.innerHTML = '<span>Ingresar</span><i class="ph-bold ph-arrow-right"></i>';
+            btnLogin.innerHTML = '<span>Entrar</span> <i class="ph-bold ph-arrow-right"></i>';
         }
     });
 
