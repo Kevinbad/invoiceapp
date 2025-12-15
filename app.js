@@ -157,10 +157,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setupAdminView(invoices) {
         // TOGGLE VIEW: Show Admin Grid, Hide Default
+        // TOGGLE VIEW: Show Admin Grid, Hide Default
         defaultStatsGrid.classList.add('hidden');
-        defaultChartView.parentElement.classList.add('hidden'); // Hide default chart container wrapper if needed, or just specific chart
-        // Actually, looking at HTML structure, we might need to target the chart container directly
-        document.querySelector('.dashboard-content .chart-container').classList.add('hidden');
+        // Hide default chart container
+        if (defaultChartView) defaultChartView.classList.add('hidden');
+
+        adminStatsGrid.classList.remove('hidden');
 
         adminStatsGrid.classList.remove('hidden');
         adminChartsView.classList.remove('hidden');
