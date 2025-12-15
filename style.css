@@ -241,9 +241,12 @@ button.btn-primary:active {
     font-size: 1.2rem;
 }
 
-.nav-brand i {
-    color: var(--primary);
-    font-size: 1.5rem;
+.nav-logo {
+    height: 32px;
+    width: auto;
+    filter: drop-shadow(0 0 8px var(--primary-glow));
+    border-radius: 4px;
+    /* Optional slight rounding */
 }
 
 .user-profile {
