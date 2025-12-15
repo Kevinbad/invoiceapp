@@ -195,7 +195,8 @@ button.btn-primary {
     width: 100%;
     padding: 1rem;
     margin-top: 1rem;
-    background: linear-gradient(135deg, var(--primary) 0%, #4338ca 100%);
+    /* User requested #01494B. Using a subtle gradient for depth */
+    background: linear-gradient(135deg, #01494B 0%, #013738 100%);
     border: none;
     border-radius: 12px;
     color: white;

@@ -157,8 +157,7 @@ const DataService = {
 
         } catch (error) {
             console.error("Fetch Invoices Error:", error);
-            // Fallback to empty if fetch fails
-            return [];
+            throw error; // Propagate error to show Error View
         }
     }
 };
