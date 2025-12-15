@@ -324,9 +324,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 canvas.height = img.height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0);
+                console.log("PDF Logo loaded successfully");
                 resolve(canvas.toDataURL('image/png'));
             };
-            img.onerror = () => resolve(null); // Fail gracefully
+            img.onerror = (e) => {
+                console.error("PDF Logo failed to load", e);
+                resolve(null);
+            };
             // Cache Busting: Force new image load
             img.src = url + '?t=' + new Date().getTime();
         });
@@ -338,7 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!inv) return;
 
         // Load Logo
-        const logoData = await loadImageBase64('IMG/logo2.jpg');
+        const logoData = await loadImageBase64('IMG/logo2.png');
 
         // Create PDF
         const doc = new jsPDF();
@@ -363,7 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 // Add logo with rounded corners styling is hard in PDF, just adding raw image
                 // x=10, y=5, w=40, h=40 (approx)
-                doc.addImage(logoData, 'JPEG', 10, 5, 40, 40, undefined, 'FAST');
+                doc.addImage(logoData, 'PNG', 10, 5, 40, 40, undefined, 'FAST');
             } catch (e) {
                 console.warn("Could not add logo to PDF", e);
             }
