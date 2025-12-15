@@ -327,7 +327,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 resolve(canvas.toDataURL('image/jpeg'));
             };
             img.onerror = () => resolve(null); // Fail gracefully
-            img.src = url;
+            // Cache Busting: Force new image load
+            img.src = url + '?t=' + new Date().getTime();
         });
     };
 
