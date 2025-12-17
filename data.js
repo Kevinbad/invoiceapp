@@ -5,25 +5,49 @@ const DB = {
 };
 
 // --- API CONFIGURATION ---
-// Note: We use a CORS Proxy to avoid "Failed to fetch" errors when running correctly from local "file://"
 const RAW_API_URL = "https://script.google.com/macros/s/AKfycbwdgwxVuYeA16H31_9QBEVZM1FKJfGdEpQEUSgDEUi-hV6NnFZoUwFzoi5Cs0v925CC/exec";
-const PROXY_URL = "https://corsproxy.io/?";
+
+// Resilience: Try multiple proxies
+const PROXY_LIST = [
+    'https://corsproxy.io/?',
+    'https://api.allorigins.win/raw?url=',
+    'https://thingproxy.freeboard.io/fetch/'
+];
+
+async function fetchAPI(params) {
+    const targetUrl = `${RAW_API_URL}?${params}`;
+
+    for (const proxy of PROXY_LIST) {
+        try {
+            const finalUrl = proxy + encodeURIComponent(targetUrl);
+            const response = await fetch(finalUrl);
+
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+            const text = await response.text();
+
+            // Try Parse JSON
+            try {
+                return JSON.parse(text);
+            } catch (jsonError) {
+                console.error(`Proxy ${proxy} returned HTML/Invalid JSON:`, text.substring(0, 100)); // Log first 100 chars
+                // If it starts with <, it's likely an HTML error page (Permission or 404)
+                if (text.trim().startsWith('<')) throw new Error("Recibimos HTML (Login/Error) en lugar de datos.");
+                throw jsonError;
+            }
+
+        } catch (e) {
+            console.warn(`Proxy ${proxy} failed:`, e.message);
+            // Try next proxy
+        }
+    }
+    throw new Error("No se pudo conectar con el servidor (Fallo en Proxies). Verifica permisos de Google Script.");
+}
 
 const DataService = {
     login: async (username, password) => {
         try {
-            // Secure Login via Backend
-            // Construct the target URL
-            const targetUrl = `${RAW_API_URL}?action=login&user=${encodeURIComponent(username)}&pass=${encodeURIComponent(password)}`;
-
-            // Wrap with Proxy
-            const finalUrl = PROXY_URL + encodeURIComponent(targetUrl);
-
-            const response = await fetch(finalUrl);
-
-            if (!response.ok) throw new Error("Error de conexión al servidor");
-
-            const result = await response.json();
+            const result = await fetchAPI(`action=login&user=${encodeURIComponent(username)}&pass=${encodeURIComponent(password)}`);
 
             if (result.success) {
                 // Populate DB for session use
@@ -36,7 +60,6 @@ const DataService = {
                 // The app previously expected DB.users to be populated for Admin lookups.
                 // We'll stick the current user in there.
                 DB.users = [result.user];
-
                 return { success: true, user: result.user };
             } else {
                 throw new Error(result.message || "Credenciales incorrectas");
@@ -50,14 +73,7 @@ const DataService = {
 
     getInvoices: async (userId) => {
         try {
-            const targetUrl = `${RAW_API_URL}?action=getInvoices&userId=${userId}`;
-            const finalUrl = PROXY_URL + encodeURIComponent(targetUrl);
-
-            const response = await fetch(finalUrl);
-
-            if (!response.ok) throw new Error("Error al obtener facturas");
-
-            const result = await response.json();
+            const result = await fetchAPI(`action=getInvoices&userId=${userId}`);
 
             if (result.success) {
                 // REVERTING DATE PARSING LOGIC TO FRONTEND TO BE SAFE
