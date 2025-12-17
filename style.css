@@ -404,16 +404,25 @@ button.btn-primary:active {
 }
 
 /* TABLE */
+.invoices-section {
+    margin-top: 3rem;
+    /* More space from charts */
+}
+
 .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.5rem;
-    /* Increased functionality */
-    gap: 1rem;
-    /* Prevent squeezing */
+    margin-bottom: 2rem;
+    /* More space before table */
+    gap: 2rem;
+    /* Significant gap between Title and Search */
     flex-wrap: wrap;
-    /* Allow wrapping on small screens */
+}
+
+.section-header h3 {
+    font-size: 1.5rem;
+    /* Slightly bigger title */
 }
 
 .btn-text {
@@ -752,19 +761,24 @@ button.btn-primary:active {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--glass-border);
     border-radius: 20px;
-    padding: 0.5rem 1rem 0.5rem 2.5rem;
+    padding: 0.6rem 1rem 0.6rem 2.8rem;
+    /* Slightly bigger padding */
     color: white;
     font-family: inherit;
-    font-size: 0.9rem;
-    width: 200px;
-    transition: all 0.2s;
+    font-size: 0.95rem;
+    width: 260px;
+    /* Wider default */
+    transition: all 0.3s var(--ease-squish);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .search-input:focus {
-    width: 250px;
+    width: 320px;
+    /* Wider focus */
     outline: none;
     border-color: var(--primary);
     background: rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
 }
 
 .search-input::placeholder {
