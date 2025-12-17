@@ -94,6 +94,10 @@
                     <span>Solvenza Invoices</span>
                 </div>
                 <div class="user-profile">
+                    <div class="notification-wrapper" id="notification-bell">
+                        <i class="ph-bold ph-bell"></i>
+                        <span class="badget hidden" id="notification-dot"></span>
+                    </div>
                     <span id="user-name-display">Cargando...</span>
                     <button id="logout-btn" class="icon-btn" title="Cerrar Sesión">
                         <i class="ph-bold ph-sign-out"></i>
@@ -219,12 +223,21 @@
 
 
                 <!-- ADMIN: Moved Original Chart to only show for Employees (will act as toggle) -->
+                <div class="glass-card chart-container">
+                    <h3>Ingresos Históricos</h3>
+                    <div style="height: 250px; position: relative;">
+                        <canvas id="incomeChart"></canvas>
+                    </div>
+                </div>
 
                 <!-- Recent Invoices List -->
                 <div class="invoices-section">
                     <div class="section-header">
                         <h3>Historial de Pagos</h3>
-                        <button class="btn-text">Ver todos</button>
+                        <div class="search-wrapper">
+                            <i class="ph ph-magnifying-glass"></i>
+                            <input type="text" id="invoice-search" placeholder="Buscar..." class="search-input">
+                        </div>
                     </div>
 
                     <div class="glass-card table-container">

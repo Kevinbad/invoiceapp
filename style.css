@@ -644,3 +644,97 @@ button.btn-primary:active {
 .cal-day:hover .cal-tooltip {
     opacity: 1;
 }
+
+/* NOTIFICATIONS */
+.notification-wrapper {
+    position: relative;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+    color: var(--text-muted);
+    transition: all 0.2s;
+}
+
+.notification-wrapper:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.notification-wrapper i {
+    font-size: 1.4rem;
+}
+
+.badget {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 10px;
+    height: 10px;
+    background: #ef4444;
+    /* Red */
+    border-radius: 50%;
+    border: 2px solid #0f0c29;
+    /* Match bg to cut hole */
+    box-shadow: 0 0 8px #ef4444;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+    }
+
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+    }
+
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    }
+}
+
+/* SEARCH INPUT */
+.search-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-wrapper i {
+    position: absolute;
+    left: 0.8rem;
+    color: var(--text-muted);
+    font-size: 1rem;
+    pointer-events: none;
+}
+
+.search-input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 0.5rem 1rem 0.5rem 2.5rem;
+    color: white;
+    font-family: inherit;
+    font-size: 0.9rem;
+    width: 200px;
+    transition: all 0.2s;
+}
+
+.search-input:focus {
+    width: 250px;
+    outline: none;
+    border-color: var(--primary);
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.search-input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}

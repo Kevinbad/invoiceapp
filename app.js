@@ -156,12 +156,86 @@ document.addEventListener('DOMContentLoaded', () => {
             // Render Chart
             renderIncomeChart(invoices);
 
+            // Setup Search
+            setupSearch(invoices);
+
+            // Check Notifications (After small delay)
+            setTimeout(() => checkUnseenPayments(invoices), 1000);
+
         } catch (error) {
             console.error(error);
             // SHOW ERROR VIEW
             dashboardView.classList.add('hidden');
             document.getElementById('error-view').classList.remove('hidden');
         }
+    }
+
+    function setupSearch(invoices) {
+        const searchInput = document.getElementById('invoice-search');
+        if (!searchInput) return;
+
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+
+            if (!query) {
+                renderInvoices(invoices);
+                return;
+            }
+
+            const filtered = invoices.filter(inv => {
+                const date = inv.date.toLowerCase();
+                const concept = inv.concept.toLowerCase();
+                const amount = inv.amount.toString();
+                const status = inv.status.toLowerCase();
+
+                return date.includes(query) ||
+                    concept.includes(query) ||
+                    amount.includes(query) ||
+                    status.includes(query);
+            });
+
+            renderInvoices(filtered);
+        });
+    }
+
+    function checkUnseenPayments(invoices) {
+        const notificationDot = document.getElementById('notification-dot');
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+
+        // 1. Get downloaded IDs from local storage
+        const downloadedIds = JSON.parse(localStorage.getItem('downloadedInvoices') || '[]');
+
+        // 2. Find any invoice that matches CURRENT Month/Year, is PAID, and NOT in downloaded list
+        const hasUnseen = invoices.some(inv => {
+            const d = new Date(inv.date);
+            // Check matching month/year (exact match for "this month's payment")
+            // Also lenient check: Any paid invoice in the last 30 days? 
+            // Stick to strict "current calendar month" as requested 
+            const isCurrentMonth = d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+            const isPaid = inv.status === 'Pagado';
+
+            return isCurrentMonth && isPaid && !downloadedIds.includes(inv.id);
+        });
+
+        if (hasUnseen) {
+            notificationDot.classList.remove('hidden');
+        } else {
+            notificationDot.classList.add('hidden');
+        }
+    }
+
+    function markAsDownloaded(invoiceId) {
+        const downloadedIds = JSON.parse(localStorage.getItem('downloadedInvoices') || '[]');
+        if (!downloadedIds.includes(invoiceId)) {
+            downloadedIds.push(invoiceId);
+            localStorage.setItem('downloadedInvoices', JSON.stringify(downloadedIds));
+        }
+        // Hide dot if no more unseen
+        const notificationDot = document.getElementById('notification-dot');
+        if (notificationDot) notificationDot.classList.add('hidden');
+        // Note: Ideally re-run checkUnseenPayments to be precise, but hiding immediately feels responsive
     }
 
     function setupAdminView(invoices) {
@@ -726,6 +800,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // 5. Sign-off / Footer REMOVED per user request
 
         doc.save(`Solvenza_Payment_${fullDate}.pdf`);
+
+        // Mark as seen for notifications
+        markAsDownloaded(invoiceId);
     };
 
     // --- ADMIN REPORT GENERATION ---
