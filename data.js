@@ -5,13 +5,21 @@ const DB = {
 };
 
 // --- API CONFIGURATION ---
-const API_URL = "https://script.google.com/macros/s/AKfycbwdgwxVuYeA16H31_9QBEVZM1FKJfGdEpQEUSgDEUi-hV6NnFZoUwFzoi5Cs0v925CC/exec";
+// Note: We use a CORS Proxy to avoid "Failed to fetch" errors when running correctly from local "file://"
+const RAW_API_URL = "https://script.google.com/macros/s/AKfycbwdgwxVuYeA16H31_9QBEVZM1FKJfGdEpQEUSgDEUi-hV6NnFZoUwFzoi5Cs0v925CC/exec";
+const PROXY_URL = "https://corsproxy.io/?";
 
 const DataService = {
     login: async (username, password) => {
         try {
             // Secure Login via Backend
-            const response = await fetch(`${API_URL}?action=login&user=${encodeURIComponent(username)}&pass=${encodeURIComponent(password)}`);
+            // Construct the target URL
+            const targetUrl = `${RAW_API_URL}?action=login&user=${encodeURIComponent(username)}&pass=${encodeURIComponent(password)}`;
+
+            // Wrap with Proxy
+            const finalUrl = PROXY_URL + encodeURIComponent(targetUrl);
+
+            const response = await fetch(finalUrl);
 
             if (!response.ok) throw new Error("Error de conexión al servidor");
 
@@ -42,7 +50,10 @@ const DataService = {
 
     getInvoices: async (userId) => {
         try {
-            const response = await fetch(`${API_URL}?action=getInvoices&userId=${userId}`);
+            const targetUrl = `${RAW_API_URL}?action=getInvoices&userId=${userId}`;
+            const finalUrl = PROXY_URL + encodeURIComponent(targetUrl);
+
+            const response = await fetch(finalUrl);
 
             if (!response.ok) throw new Error("Error al obtener facturas");
 
