@@ -200,6 +200,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function checkUnseenPayments(invoices) {
         const notificationDot = document.getElementById('notification-dot');
+        const notificationBell = document.getElementById('notification-bell');
+
         const now = new Date();
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
@@ -207,23 +209,63 @@ document.addEventListener('DOMContentLoaded', () => {
         // 1. Get downloaded IDs from local storage
         const downloadedIds = JSON.parse(localStorage.getItem('downloadedInvoices') || '[]');
 
-        // 2. Find any invoice that matches CURRENT Month/Year, is PAID, and NOT in downloaded list
-        const hasUnseen = invoices.some(inv => {
+        // 2. Find any invoice...
+        const unseenInvoices = invoices.filter(inv => {
             const d = new Date(inv.date);
-            // Check matching month/year (exact match for "this month's payment")
-            // Also lenient check: Any paid invoice in the last 30 days? 
-            // Stick to strict "current calendar month" as requested 
             const isCurrentMonth = d.getMonth() === currentMonth && d.getFullYear() === currentYear;
             const isPaid = inv.status === 'Pagado';
-
             return isCurrentMonth && isPaid && !downloadedIds.includes(inv.id);
         });
 
-        if (hasUnseen) {
+        if (unseenInvoices.length > 0) {
             notificationDot.classList.remove('hidden');
+
+            // ADD CLICK EVENT
+            // Remove old listener if exists to prevent duplicates (simple cloning trick)
+            const newBell = notificationBell.cloneNode(true);
+            notificationBell.parentNode.replaceChild(newBell, notificationBell);
+
+            newBell.addEventListener('click', () => {
+                showToast(`Tienes ${unseenInvoices.length} recibo(s) pendiente(s) de descargar este mes.`);
+                // Optional: Scroll to table
+                invoicesList.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+
         } else {
             notificationDot.classList.add('hidden');
+            // Reset click to just say "No pending notifications"
+            const newBell = notificationBell.cloneNode(true);
+            notificationBell.parentNode.replaceChild(newBell, notificationBell);
+            newBell.addEventListener('click', () => {
+                showToast("Estás al día. No hay nuevas notificaciones.", "success");
+            });
         }
+    }
+
+    function showToast(message, type = 'info') {
+        // Create Toast Element dynamically
+        const existingToast = document.querySelector('.toast');
+        if (existingToast) existingToast.remove();
+
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.innerHTML = `
+            <i class="ph-bold ${type === 'success' ? 'ph-check-circle' : 'ph-info'}"></i>
+            <span>${message}</span>
+        `;
+
+        if (type === 'success') toast.style.borderLeftColor = 'var(--success)';
+
+        document.body.appendChild(toast);
+
+        // Trigger Animation
+        setTimeout(() => toast.classList.add('show'), 10);
+
+        // Auto hide
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
     }
 
     function markAsDownloaded(invoiceId) {

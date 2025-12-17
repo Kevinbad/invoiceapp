@@ -408,7 +408,12 @@ button.btn-primary:active {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
+    /* Increased functionality */
+    gap: 1rem;
+    /* Prevent squeezing */
+    flex-wrap: wrap;
+    /* Allow wrapping on small screens */
 }
 
 .btn-text {
@@ -422,6 +427,33 @@ button.btn-primary:active {
 .table-container {
     padding: 1rem;
     overflow-x: auto;
+    border-radius: 20px;
+    /* Consistent rounding */
+}
+
+/* TOAST NOTIFICATION */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(15, 23, 42, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-left: 4px solid var(--primary);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    z-index: 1000;
+    transform: translateX(120%);
+    transition: transform 0.3s var(--ease-squish);
+}
+
+.toast.show {
+    transform: translateX(0);
 }
 
 .invoices-table {
