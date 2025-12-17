@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginError = document.getElementById('login-error');
     const btnLogin = loginForm.querySelector('button');
     const btnLogout = document.getElementById('logout-btn');
+    const btnAnnualReceipt = document.getElementById('btn-annual-receipt');
 
     // Dashboard Elements
     const userNameDisplay = document.getElementById('user-name-display');
@@ -106,6 +107,14 @@ document.addEventListener('DOMContentLoaded', () => {
         loginForm.reset();
         switchView('login');
     });
+
+    if (btnAnnualReceipt) {
+        btnAnnualReceipt.addEventListener('click', () => {
+            if (currentUser) {
+                generateAnnualReceipt(currentUser.id);
+            }
+        });
+    }
 
     // --- DASHBOARD LOGIC ---
     async function initDashboard(user) {
@@ -847,5 +856,141 @@ document.addEventListener('DOMContentLoaded', () => {
         doc.text("CBO Solvenza Solutions", 105, finalY + 5, { align: 'center' });
 
         doc.save(`Solvenza_Report_${capitalizedMonth}_${year}.pdf`);
+    };
+
+    // --- EMPLOYEE ANNUAL RECEIPT ---
+    window.generateAnnualReceipt = async (userId) => {
+        const { jsPDF } = window.jspdf;
+        const invs = await DataService.getInvoices(userId);
+        if (!invs || invs.length === 0) return;
+
+        const now = new Date();
+        const year = now.getFullYear();
+
+        // Filter for Current Year
+        const annualInvoices = invs.filter(i => new Date(i.date).getFullYear() === year);
+
+        if (annualInvoices.length === 0) {
+            alert("No payments found for this year.");
+            return;
+        }
+
+        // Aggregate by Month
+        const monthlyData = {};
+        annualInvoices.forEach(inv => {
+            // "YYYY-MM-DD"
+            const parts = inv.date.split('-');
+            // Create date object using parts to avoid timezone shifting
+            // parts[0]=Year, parts[1]=Month(1-12), parts[2]=Day
+            const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+
+            const monthIndex = dateObj.getMonth(); // 0-11
+
+            if (!monthlyData[monthIndex]) {
+                monthlyData[monthIndex] = {
+                    monthName: dateObj.toLocaleDateString('en-US', { month: 'long' }),
+                    salary: 0,
+                    commission: 0,
+                    total: 0
+                };
+            }
+            monthlyData[monthIndex].salary += (inv.salary || 0);
+            monthlyData[monthIndex].commission += (inv.commission || 0);
+            monthlyData[monthIndex].total += inv.amount;
+        });
+
+        // Convert to Array and Sort by Month Index
+        const tableBody = Object.entries(monthlyData)
+            .sort((a, b) => Number(a[0]) - Number(b[0]))
+            .map(([k, d]) => [
+                d.monthName,
+                formatCurrency(d.salary),
+                formatCurrency(d.commission),
+                formatCurrency(d.total)
+            ]);
+
+        const totalSalary = Object.values(monthlyData).reduce((s, d) => s + d.salary, 0);
+        const totalComm = Object.values(monthlyData).reduce((s, d) => s + d.commission, 0);
+        const grandTotal = Object.values(monthlyData).reduce((s, d) => s + d.total, 0);
+
+        // Add Totals Row
+        tableBody.push([
+            { content: 'TOTALS', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+            { content: formatCurrency(totalSalary), styles: { fontStyle: 'bold', fillColor: [240, 240, 240], halign: 'right' } },
+            { content: formatCurrency(totalComm), styles: { fontStyle: 'bold', fillColor: [240, 240, 240], halign: 'right' } },
+            { content: formatCurrency(grandTotal), styles: { fontStyle: 'bold', fillColor: [240, 240, 240], halign: 'right' } }
+        ]);
+
+        // PDF Generation
+        const doc = new jsPDF();
+
+        // Try to load logo
+        let logoData = null;
+        try {
+            logoData = await loadImageBase64('IMG/logo2.png');
+        } catch (e) { console.warn("Logo load fail", e); }
+
+        // Header
+        doc.setFillColor(15, 23, 42); // Navy
+        doc.rect(0, 0, 210, 50, 'F');
+
+        if (logoData) {
+            doc.addImage(logoData, 'PNG', 10, 12.5, 25, 25);
+        }
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(22);
+        doc.text("Solvenza Solutions", 105, 22, { align: 'center' });
+
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'normal');
+        doc.text("ANNUAL INCOME CERTIFICATE", 105, 38, { align: 'center' });
+
+        // User Info
+        const user = DB.users.find(u => u.id === userId);
+        doc.setTextColor(15, 23, 42);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Employee:`, 20, 65);
+        doc.setFont('helvetica', 'normal');
+        doc.text(user ? user.fullName : 'Unknown', 45, 65);
+
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Year:`, 20, 72);
+        doc.setFont('helvetica', 'normal');
+        doc.text(String(year), 45, 72);
+
+        doc.setFontSize(10);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`Generated: ${now.toLocaleDateString()}`, 190, 65, { align: 'right' });
+
+        // Table
+        doc.autoTable({
+            startY: 80,
+            head: [['Month', 'Base Salary', 'Commissions', 'Total Received']],
+            body: tableBody,
+            theme: 'striped',
+            headStyles: {
+                fillColor: [16, 185, 129], // Emerald Green
+                textColor: 255,
+                halign: 'center',
+                fontStyle: 'bold'
+            },
+            columnStyles: {
+                0: { fontStyle: 'bold' },
+                1: { halign: 'right' },
+                2: { halign: 'right' },
+                3: { fontStyle: 'bold', halign: 'right' }
+            },
+            didDrawPage: (data) => {
+                // Footer
+                doc.setFontSize(8);
+                doc.setTextColor(150);
+                doc.text(`Solvenza Solutions - Annual Report ${year}`, 105, 290, { align: 'center' });
+            }
+        });
+
+        doc.save(`Solvenza_Annual_Receipt_${year}_${user ? user.fullName.replace(/\s+/g, '_') : 'Employee'}.pdf`);
     };
 });
