@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const adminStatsGrid = document.getElementById('admin-stats-grid');
     const defaultStatsGrid = document.querySelector('.stats-grid:not(.admin-grid)'); // Select default one
     const adminChartsView = document.getElementById('admin-charts-view'); // Kept variable to avoid breakage if referenced, but logic will change
+    const defaultChartView = document.querySelector('.chart-container:not(.charts-split .chart-container)');
     const adminLeaderboardView = document.getElementById('admin-leaderboard-view');
     const adminLeaderboardList = document.getElementById('admin-leaderboard-list');
     const adminCalendarView = document.getElementById('admin-calendar-view'); // NEW
