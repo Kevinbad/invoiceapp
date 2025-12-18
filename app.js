@@ -21,8 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Admin Elements
     const adminStatsGrid = document.getElementById('admin-stats-grid');
     const defaultStatsGrid = document.querySelector('.stats-grid:not(.admin-grid)'); // Select default one
-    const adminChartsView = document.getElementById('admin-charts-view');
-    const defaultChartView = document.querySelector('.chart-container:not(.charts-split .chart-container)');
+    const adminChartsView = document.getElementById('admin-charts-view'); // Kept variable to avoid breakage if referenced, but logic will change
     const adminLeaderboardView = document.getElementById('admin-leaderboard-view');
     const adminLeaderboardList = document.getElementById('admin-leaderboard-list');
     const adminCalendarView = document.getElementById('admin-calendar-view'); // NEW
@@ -34,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Admin KPIs
     const adminMonthTotal = document.getElementById('admin-month-total');
     const adminYearProj = document.getElementById('admin-year-proj');
-    const adminCommRatio = document.getElementById('admin-comm-ratio');
+    // const adminCommRatio = document.getElementById('admin-comm-ratio'); // REMOVED
     const adminTotalEmployees = document.getElementById('admin-total-employees');
 
     // State
@@ -292,19 +291,76 @@ document.addEventListener('DOMContentLoaded', () => {
         adminStatsGrid.classList.remove('hidden');
 
         adminStatsGrid.classList.remove('hidden');
-        adminChartsView.classList.remove('hidden');
-        adminLeaderboardView.classList.remove('hidden');
+        // adminChartsView.classList.remove('hidden'); // REMOVED per user request
+        document.getElementById('admin-project-summary-view').classList.remove('hidden'); // UPDATED
         adminCalendarView.classList.remove('hidden'); // Show Calendar
 
         document.querySelector('.dashboard-header h2').textContent = `Panel de Control (Admin)`;
 
+
+        // --- 0. PROJECT FILTER SETUP ---
+        const projectFilterContainer = document.getElementById('admin-project-filter-container'); // Note: ID in HTML is admin-filter-container but consistent naming nice?
+        // Let's stick to what we put in HTML: admin-filter-container
+        const filterContainer = document.getElementById('admin-filter-container');
+        const projectSelect = document.getElementById('admin-project-filter');
+
+        filterContainer.classList.remove('hidden');
+
+        // Extract Unique Projects
+        // Source from Users, but only those present in Invoices might be cleaner?
+        // Or just all available projects.
+        const projects = [...new Set(DB.users
+            .filter(u => u.project && u.project !== 'General' && u.role !== 'Administrator')
+            .map(u => u.project))
+        ].sort();
+
+        // Populate options if empty (avoid duplicate if re-run)
+        if (projectSelect.options.length === 1) {
+            projects.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p;
+                opt.textContent = p;
+                projectSelect.appendChild(opt);
+            });
+        }
+
+        // Filter Logic
+        let currentFilteredInvoices = [...invoices];
+
+        const applyAdminFilter = (project) => {
+            if (project === 'all') {
+                currentFilteredInvoices = [...invoices];
+            } else {
+                currentFilteredInvoices = invoices.filter(inv => inv.project === project);
+            }
+            updateAdminDashboard(currentFilteredInvoices);
+        };
+
+        // Event Listener (Remove old to prevent dupes)
+        const newSelect = projectSelect.cloneNode(true);
+        projectSelect.parentNode.replaceChild(newSelect, projectSelect);
+
+        newSelect.addEventListener('change', (e) => {
+            applyAdminFilter(e.target.value);
+        });
+
+        // Initial Load
+        updateAdminDashboard(invoices);
+    }
+
+    function updateAdminDashboard(filteredInvoices) {
         // --- 1. KPI CALCULATIONS ---
         const now = new Date();
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
 
+        const adminMonthTotal = document.getElementById('admin-month-total');
+        const adminYearProj = document.getElementById('admin-year-proj');
+        const adminCommRatio = document.getElementById('admin-comm-ratio');
+        const adminTotalEmployees = document.getElementById('admin-total-employees');
+
         // Filter current month data
-        const currentMonthInvoices = invoices.filter(inv => {
+        const currentMonthInvoices = filteredInvoices.filter(inv => {
             const d = new Date(inv.date);
             return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
         });
@@ -312,54 +368,97 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalMonthPaid = currentMonthInvoices.reduce((sum, inv) => sum + inv.amount, 0);
 
         // Annual Projection (Avg * 12)
-        const totalYearPaid = invoices.filter(inv => new Date(inv.date).getFullYear() === currentYear)
+        const totalYearPaid = filteredInvoices.filter(inv => new Date(inv.date).getFullYear() === currentYear)
             .reduce((sum, inv) => sum + inv.amount, 0);
         const monthsActive = currentMonth + 1; // Simple estimation
         const projectedYear = (totalYearPaid / monthsActive) * 12;
 
-        // Commission Ratio
-        const totalBase = currentMonthInvoices.reduce((sum, inv) => sum + (inv.salary || 0), 0);
-        const totalComm = currentMonthInvoices.reduce((sum, inv) => sum + (inv.commission || 0), 0);
-        const loopTotal = totalBase + totalComm;
-        const ratio = loopTotal > 0 ? (totalComm / loopTotal) * 100 : 0;
+        // KPI: Total Active Clients (Projects)
+        const activeProjects = [...new Set(DB.users
+            .filter(u => u.project && u.project !== 'General' && u.role !== 'Administrator')
+            .map(u => u.project))
+        ].length;
 
         // UPDATE UI
         adminMonthTotal.textContent = formatCurrency(totalMonthPaid);
         adminYearProj.textContent = formatCurrency(projectedYear);
-        adminCommRatio.textContent = ratio.toFixed(1) + '%';
+        if (document.getElementById('admin-active-clients')) {
+            document.getElementById('admin-active-clients').textContent = activeProjects;
+        }
 
-        // Total Employees (Exclude 'Administrator' or just Solvenza Master)
-        // Let's count Active Employees (Role != Administrator)
-        const totalEmployees = DB.users.filter(u => u.role !== 'Administrator').length;
-        adminTotalEmployees.textContent = totalEmployees;
+        // Total Employees (Exclude 'Administrator')
+        // We need to count Unique Employees in the filtered set? Or All users with that project?
+        // Let's count Users associated with the current filter
+        const selectValue = document.getElementById('admin-project-filter').value;
+        let employeeCount = 0;
 
-        // --- 2. ADMIN CHARTS ---
-        renderAdminCharts(invoices, currentYear);
+        if (selectValue === 'all') {
+            employeeCount = DB.users.filter(u => u.role !== 'Administrator').length;
+        } else {
+            employeeCount = DB.users.filter(u => u.project === selectValue).length;
+        }
+        adminTotalEmployees.textContent = employeeCount;
 
-        // --- 3. LEADERBOARD ---
-        renderLeaderboard(currentMonthInvoices);
+        // --- 2. ADMIN CHARTS (REMOVED) ---
+        // renderAdminCharts(filteredInvoices, currentYear); // REMOVED
+
+        // --- 3. CLIENT PORTFOLIO (Replaces Project Summary) ---
+        renderClientPortfolio(filteredInvoices);
 
         // --- 4. CALENDAR ---
-        renderCalendar(invoices, currentCalendarDate);
+        // Need to pass filtered invoices to calendar re-render
+        // But calendar has its own state (currentCalendarDate).
+        // Best way: Use global or pass it? The setupAdminView had specific logic involved.
+        // Let's assume renderCalendar uses the invoices passed to it.
+        // We need to trigger it with the currently viewed date.
 
-        // Calendar Navigation Events (Remove old listeners to prevent duplicates if re-called)
+        // Accessing the date from the closure or simple hack: view defaults to 'now' on init, 
+        // but if user navigated, we might reset. 
+        // Let's just reset to NOW for simplicity on filter change, or read from DOM?
+        // Let's allow the existing closure `currentCalendarDate` to persist.
+        // But we need to call renderCalendar(filteredInvoices, currentCalendarDate) inside updateAdminDashboard logic?
+        // Since `currentCalendarDate` is in the outer scope, we can access it!
+        // Wait, `setupAdminView` defined `currentCalendarDate`? No, it's global to app.js (line 42).
+
+        // So we can just call:
+        // renderCalendar(filteredInvoices, currentCalendarDate);
+        // HOWEVER: The navigation buttons in setupAdminView are wired to `invoices` (the original scope).
+        // We need to re-wire them? Or Update a state variable `currentAdminInvoices`?
+
+        // REFACTOR: Make `adminInvoicesState` global or accessible so buttons see it.
+        // OR: Wired buttons only change the date, and call `renderCalendar` with WHAT invoices?
+        // They are currently closures capturing `invoices` valid at `setupAdminView` time.
+
+        // Fix: We must update the listeners on buttons too, OR make the listeners assume "Current Active Invoices".
+        // Let's go with updating listeners in this function to keep it robust.
+
+        const btnCalPrev = document.getElementById('cal-prev');
+        const btnCalNext = document.getElementById('cal-next');
+
+        // Remove old listeners (Replacement trick)
         const newPrev = btnCalPrev.cloneNode(true);
         const newNext = btnCalNext.cloneNode(true);
         btnCalPrev.parentNode.replaceChild(newPrev, btnCalPrev);
         btnCalNext.parentNode.replaceChild(newNext, btnCalNext);
 
+        // Re-attach with NEW filtered set
+        // Note: currentCalendarDate is the global one.
+
+        // Initial Render
+        // We need to reference `currentCalendarDate` from the outer scope, assuming it is defined there.
+        // Yes, line 42.
+
+        renderCalendar(filteredInvoices, currentCalendarDate); // Use Global
+
         newPrev.addEventListener('click', () => {
             currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
-            renderCalendar(invoices, currentCalendarDate);
+            renderCalendar(filteredInvoices, currentCalendarDate);
         });
 
         newNext.addEventListener('click', () => {
             currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
-            renderCalendar(invoices, currentCalendarDate);
+            renderCalendar(filteredInvoices, currentCalendarDate);
         });
-
-        // --- 5. EXPORT BUTTON LOGIC (Keep existing) ---
-        // Show Download Button logic stays if needed
     }
 
     function renderCalendar(invoices, dateObj) {
@@ -437,116 +536,53 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function renderAdminCharts(invoices, year) {
-        // CHART 1: Spend Trend (Line)
-        const ctxTrend = document.getElementById('adminTrendChart');
-        if (ctxTrend) {
-            if (adminTrendChartInstance) adminTrendChartInstance.destroy();
+    // function renderAdminCharts(invoices, year) { ... } // REMOVED
 
-            const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-            const dataByMonth = new Array(12).fill(0);
+    function renderClientPortfolio(invoices) {
+        const list = document.getElementById('admin-project-summary-list');
+        if (!list) return;
+        list.innerHTML = '';
 
-            invoices.filter(i => new Date(i.date).getFullYear() === year).forEach(inv => {
-                dataByMonth[new Date(inv.date).getMonth()] += inv.amount;
-            });
+        // 1. Get Projects
+        const projects = [...new Set(DB.users
+            .filter(u => u.project && u.project !== 'General' && u.role !== 'Administrator')
+            .map(u => u.project))
+        ].sort();
 
-            adminTrendChartInstance = new Chart(ctxTrend, {
-                type: 'line',
-                data: {
-                    labels: monthNames,
-                    datasets: [{
-                        label: 'Dispersión 2025',
-                        data: dataByMonth,
-                        borderColor: '#6366f1', // Indigo
-                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } } }
-                }
-            });
-        }
+        // Calculate Total Investment YTD (or based on filter, but usually we want context of Total)
+        // If filter is All, we show all. 
+        const selectValue = document.getElementById('admin-project-filter')?.value || 'all';
+        const projectsToShow = selectValue === 'all' ? projects : [selectValue];
 
-        // CHART 2: Distribution (Doughnut)
-        const ctxDist = document.getElementById('adminDistChart');
-        if (ctxDist) {
-            if (adminDistChartInstance) adminDistChartInstance.destroy();
+        projectsToShow.forEach(proj => {
+            // Stats
+            const agents = DB.users.filter(u => u.project === proj).length;
 
-            // Aggregate ALL TIME or THIS YEAR? Let's do THIS YEAR
-            const yearInvoices = invoices.filter(i => new Date(i.date).getFullYear() === year);
-            const totalSal = yearInvoices.reduce((sum, i) => sum + (i.salary || 0), 0);
-            const totalComm = yearInvoices.reduce((sum, i) => sum + (i.commission || 0), 0);
+            // Investment: Sum of invoices belonging to this project from the PASSED invoices set
+            const projInvestment = invoices
+                .filter(inv => inv.project === proj)
+                .reduce((sum, inv) => sum + inv.amount, 0);
 
-            adminDistChartInstance = new Chart(ctxDist, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Salario Base', 'Comisiones'],
-                    datasets: [{
-                        data: [totalSal, totalComm],
-                        backgroundColor: ['#3b82f6', '#10b981'], // Blue, Emerald
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '70%',
-                    plugins: {
-                        legend: { position: 'bottom', labels: { color: '#cbd5e1' } }
-                    }
-                }
-            });
-        }
-    }
-
-    function renderLeaderboard(monthInvoices) {
-        adminLeaderboardList.innerHTML = '';
-
-        // Group by User
-        const userStats = {};
-        monthInvoices.forEach(inv => {
-            if (!userStats[inv.employeeName]) userStats[inv.employeeName] = 0;
-            userStats[inv.employeeName] += (inv.commission || 0);
-        });
-
-        // Convert to Array & Sort
-        const sorted = Object.entries(userStats)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 5); // Top 5
-
-        const totalComms = monthInvoices.reduce((sum, i) => sum + (i.commission || 0), 0);
-
-        sorted.forEach(([name, amount], index) => {
-            if (amount === 0) return; // Skip zero commissions
-
-            const percentage = totalComms > 0 ? (amount / totalComms) * 100 : 0;
+            // Average per Agent
+            const avgPerAgent = agents > 0 ? (projInvestment / agents) : 0;
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <span style="background: rgba(255,255,255,0.1); width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 0.8rem;">
-                            ${index + 1}
+                    <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: 500;">
+                        <span style="background: rgba(255,255,255,0.1); width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; color: #a5b4fc;">
+                            <i class="ph-fill ph-briefcase"></i>
                         </span>
-                        <span>${name}</span>
+                        <span>${proj}</span>
                     </div>
                 </td>
-                <td style="text-align: right; font-weight: bold;">${formatCurrency(amount)}</td>
-                <td style="text-align: right;">
-                    <div style="display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem;">
-                        <span style="font-size: 0.9rem; color: var(--text-muted)">${percentage.toFixed(1)}%</span>
-                        <div style="width: 40px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px;">
-                            <div style="width: ${percentage}%; height: 100%; background: #10b981; border-radius: 2px;"></div>
-                        </div>
-                    </div>
+                <td style="text-align: center;">${agents}</td>
+                <td style="text-align: right; font-weight: bold;">${formatCurrency(projInvestment)}</td>
+                 <td style="text-align: right;">
+                    <span style="font-size: 0.9rem; color: var(--text-muted)">${formatCurrency(avgPerAgent)}</span>
                 </td>
             `;
-            adminLeaderboardList.appendChild(tr);
+            list.appendChild(tr);
         });
     }
 
@@ -555,7 +591,9 @@ document.addEventListener('DOMContentLoaded', () => {
         defaultStatsGrid.classList.remove('hidden');
         adminStatsGrid.classList.add('hidden');
         adminChartsView.classList.add('hidden');
-        adminLeaderboardView.classList.add('hidden');
+        const summaryView = document.getElementById('admin-project-summary-view');
+        if (summaryView) summaryView.classList.add('hidden');
+
         adminCalendarView.classList.add('hidden'); // Hide calendar
         document.querySelector('.dashboard-content .chart-container').classList.remove('hidden');
 

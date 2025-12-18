@@ -440,6 +440,42 @@ button.btn-primary:active {
     /* Consistent rounding */
 }
 
+/* Admin Filter */
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.filter-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
+}
+
+.project-select {
+    background: transparent;
+    border: none;
+    color: white;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    outline: none;
+    cursor: pointer;
+}
+
+.project-select option {
+    background: #1e293b;
+    /* Dark background for options */
+    color: white;
+}
+
 /* TOAST NOTIFICATION */
 .toast {
     position: fixed;

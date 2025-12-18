@@ -108,8 +108,18 @@
             <div class="dashboard-content">
                 <!-- Welcome Header -->
                 <header class="dashboard-header">
-                    <h2 id="welcome-msg">Bienvenido de nuevo</h2>
-                    <p class="date-display" id="current-date">Hoy es 13 de Diciembre, 2025</p>
+                    <div>
+                        <h2 id="welcome-msg">Bienvenido de nuevo</h2>
+                        <p class="date-display" id="current-date">Hoy es 13 de Diciembre, 2025</p>
+                    </div>
+                    <!-- Admin Filter (Hidden by default) -->
+                    <div id="admin-filter-container" class="filter-wrapper hidden">
+                        <i class="ph-bold ph-funnel"></i>
+                        <select id="admin-project-filter" class="project-select">
+                            <option value="all">Todos los Proyectos</option>
+                            <!-- Options populated by JS -->
+                        </select>
+                    </div>
                 </header>
 
                 <!-- Stats Cards -->
@@ -130,10 +140,18 @@
                         <button id="btn-month-report" class="btn-download hidden" title="Descargar Reporte Mensual">
                             <i class="ph-bold ph-file-pdf"></i>
                         </button>
-                        <button id="btn-annual-receipt" class="btn-download" title="Descargar Reporte Anual"
-                            style="margin-left: 0.5rem;">
-                            <i class="ph-bold ph-calendar"></i>
-                        </button>
+                    </div>
+                    <!-- New Annual Report Card -->
+                    <div class="glass-card stat-card">
+                        <div class="stat-icon purple"><i class="ph-fill ph-file-text"></i></div>
+                        <div>
+                            <h3>Resumen Anual</h3>
+                            <button id="btn-annual-receipt" class="btn-download"
+                                style="margin-top: 0.25rem; background: rgba(139, 92, 246, 0.2); width: 100%;">
+                                <i class="ph-bold ph-download-simple"></i>
+                                <span>Descargar PDF</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -154,49 +172,38 @@
                         </div>
                     </div>
                     <div class="glass-card stat-card">
-                        <div class="stat-icon bonus"><i class="ph-fill ph-percent"></i></div>
+                        <div class="stat-icon bonus"><i class="ph-fill ph-buildings"></i></div>
                         <div>
-                            <h3>Ratio Comisiones</h3>
-                            <p class="stat-value" id="admin-comm-ratio">0%</p>
+                            <h3>Clientes Activos</h3>
+                            <p class="stat-value" id="admin-active-clients">0</p>
                         </div>
                     </div>
                     <div class="glass-card stat-card">
                         <div class="stat-icon cyan"><i class="ph-fill ph-users"></i></div>
                         <div>
-                            <h3>Total Empleados</h3>
+                            <h3>Total Agentes</h3>
                             <p class="stat-value" id="admin-total-employees">0</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- ADMIN: Charts Section (Split View) -->
-                <div id="admin-charts-view" class="charts-split hidden">
-                    <div class="glass-card chart-container">
-                        <h3>Tendencia de Pagos</h3>
-                        <div style="height: 250px; position: relative;">
-                            <canvas id="adminTrendChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="glass-card chart-container">
-                        <h3>Distribución de Gasto</h3>
-                        <div style="height: 250px; position: relative;">
-                            <canvas id="adminDistChart"></canvas>
-                        </div>
-                    </div>
-                </div>
+                <!-- ADMIN: Charts Section REMOVED as per user request -->
+                <!-- <div id="admin-charts-view" class="charts-split hidden"> ... </div> -->
 
-                <!-- ADMIN: Top Performers -->
-                <div id="admin-leaderboard-view" class="glass-card table-container hidden" style="margin-bottom: 2rem;">
-                    <h3>🏆 Top Rendimiento (Comisiones)</h3>
+                <!-- ADMIN: Client Portfolio (Replaces Project Summary) -->
+                <div id="admin-project-summary-view" class="glass-card table-container hidden"
+                    style="margin-bottom: 2rem;">
+                    <h3>� Portafolio de Clientes</h3>
                     <table class="invoices-table">
                         <thead>
                             <tr>
-                                <th>Empleado</th>
-                                <th>Comisiones (Mes)</th>
-                                <th>% del Total</th>
+                                <th>Cliente / Proyecto</th>
+                                <th style="text-align: center;">Agentes Activos</th>
+                                <th style="text-align: right;">Total Facturado</th>
+                                <th style="text-align: right;">Promedio / Agente</th>
                             </tr>
                         </thead>
-                        <tbody id="admin-leaderboard-list">
+                        <tbody id="admin-project-summary-list">
                             <!-- JS populated -->
                         </tbody>
                     </table>

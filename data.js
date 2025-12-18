@@ -90,13 +90,14 @@ const DataService = {
                     password: userPass,
                     fullName: fullName,
                     role: isAdmin ? 'Administrator' : 'Employee',
-                    email: `${userUser}@solvenza.com`
+                    email: `${userUser}@solvenza.com`,
+                    project: (row[4] || "General").trim() // Capture Project from Column 5 (Index 4)
                 };
             });
 
             // Hardcoded Master Admin fallback
             if (!users.find(u => u.username === 'solvenza')) {
-                users.push({ id: 999, username: 'solvenza', password: 'solvenza2025*', fullName: 'Solvenza Master', role: 'Administrator', email: 'master@solvenza.com' });
+                users.push({ id: 999, username: 'solvenza', password: 'solvenza2025*', fullName: 'Solvenza Master', role: 'Administrator', email: 'master@solvenza.com', project: 'General' });
             }
 
             // Populate Global DB for app usage
@@ -195,6 +196,7 @@ const DataService = {
                     id: row[0] || `CSV-${index}`,
                     userId: matchedUser ? matchedUser.id : -1,
                     employeeName: employeeName,
+                    project: matchedUser ? matchedUser.project : "Unknown", // Attach Project
                     date: dateStr,
                     concept: `Payment ${monthLabel}`,
                     salary: salary,
