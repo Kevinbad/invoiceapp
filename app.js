@@ -25,11 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const defaultChartView = document.querySelector('.chart-container:not(.charts-split .chart-container)');
     const adminLeaderboardView = document.getElementById('admin-leaderboard-view');
     const adminLeaderboardList = document.getElementById('admin-leaderboard-list');
-    const adminCalendarView = document.getElementById('admin-calendar-view'); // NEW
-    const calendarGrid = document.getElementById('calendar-grid'); // NEW
-    const calMonthYear = document.getElementById('cal-month-year'); // NEW
-    const btnCalPrev = document.getElementById('cal-prev'); // NEW
-    const btnCalNext = document.getElementById('cal-next'); // NEW
+    const adminChartsSection = document.getElementById('admin-charts-section');
 
     // Admin KPIs
     const adminMonthTotal = document.getElementById('admin-month-total');
@@ -39,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // State
     let currentUser = null;
-    let currentCalendarDate = new Date(); // State for calendar
+    // let currentCalendarDate = new Date(); // REMOVED
     let incomeChartInstance = null;
     let adminTrendChartInstance = null;
     let adminDistChartInstance = null;
@@ -298,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
         adminStatsGrid.classList.remove('hidden');
         // adminChartsView.classList.remove('hidden'); // REMOVED per user request
         document.getElementById('admin-project-summary-view').classList.remove('hidden'); // UPDATED
-        adminCalendarView.classList.remove('hidden'); // Show Calendar
+        adminChartsSection.classList.remove('hidden'); // Show Charts
 
         document.querySelector('.dashboard-header h2').textContent = `Panel de Control (Admin)`;
 
@@ -410,134 +406,103 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- 3. CLIENT PORTFOLIO (Replaces Project Summary) ---
         renderClientPortfolio(filteredInvoices);
 
-        // --- 4. CALENDAR ---
-        // Need to pass filtered invoices to calendar re-render
-        // But calendar has its own state (currentCalendarDate).
-        // Best way: Use global or pass it? The setupAdminView had specific logic involved.
-        // Let's assume renderCalendar uses the invoices passed to it.
-        // We need to trigger it with the currently viewed date.
-
-        // Accessing the date from the closure or simple hack: view defaults to 'now' on init, 
-        // but if user navigated, we might reset. 
-        // Let's just reset to NOW for simplicity on filter change, or read from DOM?
-        // Let's allow the existing closure `currentCalendarDate` to persist.
-        // But we need to call renderCalendar(filteredInvoices, currentCalendarDate) inside updateAdminDashboard logic?
-        // Since `currentCalendarDate` is in the outer scope, we can access it!
-        // Wait, `setupAdminView` defined `currentCalendarDate`? No, it's global to app.js (line 42).
-
-        // So we can just call:
-        // renderCalendar(filteredInvoices, currentCalendarDate);
-        // HOWEVER: The navigation buttons in setupAdminView are wired to `invoices` (the original scope).
-        // We need to re-wire them? Or Update a state variable `currentAdminInvoices`?
-
-        // REFACTOR: Make `adminInvoicesState` global or accessible so buttons see it.
-        // OR: Wired buttons only change the date, and call `renderCalendar` with WHAT invoices?
-        // They are currently closures capturing `invoices` valid at `setupAdminView` time.
-
-        // Fix: We must update the listeners on buttons too, OR make the listeners assume "Current Active Invoices".
-        // Let's go with updating listeners in this function to keep it robust.
-
-        const btnCalPrev = document.getElementById('cal-prev');
-        const btnCalNext = document.getElementById('cal-next');
-
-        // Remove old listeners (Replacement trick)
-        const newPrev = btnCalPrev.cloneNode(true);
-        const newNext = btnCalNext.cloneNode(true);
-        btnCalPrev.parentNode.replaceChild(newPrev, btnCalPrev);
-        btnCalNext.parentNode.replaceChild(newNext, btnCalNext);
-
-        // Re-attach with NEW filtered set
-        // Note: currentCalendarDate is the global one.
-
-        // Initial Render
-        // We need to reference `currentCalendarDate` from the outer scope, assuming it is defined there.
-        // Yes, line 42.
-
-        renderCalendar(filteredInvoices, currentCalendarDate); // Use Global
-
-        newPrev.addEventListener('click', () => {
-            currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
-            renderCalendar(filteredInvoices, currentCalendarDate);
-        });
-
-        newNext.addEventListener('click', () => {
-            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
-            renderCalendar(filteredInvoices, currentCalendarDate);
-        });
+        // --- 4. CHARTS (Replaces Calendar) ---
+        renderAdminCharts(filteredInvoices);
     }
 
-    function renderCalendar(invoices, dateObj) {
-        const year = dateObj.getFullYear();
-        const month = dateObj.getMonth(); // 0-11
+    function renderAdminCharts(invoices) {
+        const year = new Date().getFullYear(); // Current Year Context
 
-        // Header
-        const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-        calMonthYear.textContent = `${monthNames[month]} ${year}`;
+        // --- CHART 1: TREND (Stacked Bar: Salary vs Commission) ---
+        const ctxTrend = document.getElementById('adminTrendChart');
+        if (ctxTrend) {
+            if (adminTrendChartInstance) adminTrendChartInstance.destroy();
 
-        calendarGrid.innerHTML = '';
+            const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+            const salaryByMonth = new Array(12).fill(0);
+            const commByMonth = new Array(12).fill(0);
 
-        // Day Headers
-        const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-        days.forEach(d => {
-            const el = document.createElement('div');
-            el.className = 'cal-day-header';
-            el.textContent = d;
-            calendarGrid.appendChild(el);
-        });
+            invoices.filter(i => new Date(i.date).getFullYear() === year).forEach(inv => {
+                const m = new Date(inv.date).getMonth();
+                salaryByMonth[m] += (inv.salary || 0);
+                commByMonth[m] += (inv.commission || 0);
+            });
 
-        // Calculations
-        const firstDay = new Date(year, month, 1).getDay(); // 0(Sun) - 6(Sat)
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-        // Empty cells for first week
-        for (let i = 0; i < firstDay; i++) {
-            const empty = document.createElement('div');
-            empty.className = 'cal-day empty';
-            calendarGrid.appendChild(empty);
+            adminTrendChartInstance = new Chart(ctxTrend, {
+                type: 'bar',
+                data: {
+                    labels: monthNames,
+                    datasets: [
+                        {
+                            label: 'Salario Base',
+                            data: salaryByMonth,
+                            backgroundColor: '#3b82f6', // Blue
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Comisiones',
+                            data: commByMonth,
+                            backgroundColor: '#10b981', // Emerald
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#cbd5e1' } },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: { label: (c) => `${c.dataset.label}: ${formatCurrency(c.raw)}` }
+                        }
+                    },
+                    scales: {
+                        x: { stacked: true, grid: { display: false }, ticks: { color: '#cbd5e1' } },
+                        y: { stacked: true, beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#cbd5e1' } }
+                    }
+                }
+            });
         }
 
-        // Days
-        for (let day = 1; day <= daysInMonth; day++) {
-            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            const invsToday = invoices.filter(inv => inv.date === dateStr);
-            const totalToday = invsToday.reduce((sum, i) => sum + i.amount, 0);
+        // --- CHART 2: PROJECT DISTRIBUTION (Doughnut) ---
+        const ctxProj = document.getElementById('adminProjectChart');
+        if (ctxProj) {
+            if (adminDistChartInstance) adminDistChartInstance.destroy(); // Reuse variable or rename? Let's reuse adminDistChartInstance logic
 
-            const dayEl = document.createElement('div');
-            dayEl.className = 'cal-day';
+            // Group by Project
+            const projectMap = {};
+            invoices.forEach(inv => {
+                const p = inv.project || 'Otros';
+                projectMap[p] = (projectMap[p] || 0) + inv.amount;
+            });
 
-            // Check if today
-            const now = new Date();
-            if (day === now.getDate() && month === now.getMonth() && year === now.getFullYear()) {
-                dayEl.classList.add('today');
-            }
+            const labels = Object.keys(projectMap);
+            const data = Object.values(projectMap);
 
-            if (invsToday.length > 0) {
-                dayEl.classList.add('has-payments');
-
-                // Tooltip
-                const tooltip = document.createElement('div');
-                tooltip.className = 'cal-tooltip';
-                tooltip.innerHTML = `${invsToday.length} Pagos<br><b>${formatCurrency(totalToday)}</b>`;
-                dayEl.appendChild(tooltip);
-
-                // Dots
-                const dotsContainer = document.createElement('div');
-                dotsContainer.className = 'payment-dots';
-                // Limit dots to avoid overflow
-                const dotsCount = Math.min(invsToday.length, 5);
-                for (let k = 0; k < dotsCount; k++) {
-                    const dot = document.createElement('div');
-                    dot.className = 'p-dot';
-                    dotsContainer.appendChild(dot);
+            adminDistChartInstance = new Chart(ctxProj, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: [
+                            '#6366f1', '#ec4899', '#8b5cf6', '#f59e0b', '#10b981', '#3b82f6'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: { position: 'right', labels: { color: '#cbd5e1', boxWidth: 12 } },
+                        tooltip: { callbacks: { label: (c) => `${c.label}: ${formatCurrency(c.raw)}` } }
+                    }
                 }
-                dayEl.appendChild(dotsContainer);
-            }
-
-            const num = document.createElement('span');
-            num.textContent = day;
-            dayEl.prepend(num); // Add number at top
-
-            calendarGrid.appendChild(dayEl);
+            });
         }
     }
 
@@ -596,10 +561,7 @@ document.addEventListener('DOMContentLoaded', () => {
         defaultStatsGrid.classList.remove('hidden');
         adminStatsGrid.classList.add('hidden');
         if (adminChartsView) adminChartsView.classList.add('hidden');
-        const summaryView = document.getElementById('admin-project-summary-view');
-        if (summaryView) summaryView.classList.add('hidden');
-
-        adminCalendarView.classList.add('hidden'); // Hide calendar
+        if (adminChartsSection) adminChartsSection.classList.add('hidden'); // Hide Charts for employees
         document.querySelector('.dashboard-content .chart-container').classList.remove('hidden');
 
         // Restore Default Table

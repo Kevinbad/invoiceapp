@@ -209,24 +209,21 @@
                     </table>
                 </div>
 
-                <!-- ADMIN: Payment Calendar -->
-                <div id="admin-calendar-view" class="glass-card hidden" style="margin-bottom: 2rem; padding: 2rem;">
-                    <div class="calendar-header"
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                        <h3 style="margin: 0;">Calendario de Pagos</h3>
-                        <div class="calendar-nav" style="display: flex; gap: 1rem; align-items: center;">
-                            <button id="cal-prev" class="icon-btn" style="width: 32px; height: 32px;"><i
-                                    class="ph-bold ph-caret-left"></i></button>
-                            <span id="cal-month-year"
-                                style="font-weight: 600; min-width: 120px; text-align: center;">--</span>
-                            <button id="cal-next" class="icon-btn" style="width: 32px; height: 32px;"><i
-                                    class="ph-bold ph-caret-right"></i></button>
+                <!-- ADMIN: Financial Charts (Replaces Calendar) -->
+                <div id="admin-charts-section" class="charts-split hidden" style="margin-bottom: 2rem;">
+                    <div class="glass-card chart-container">
+                        <h3>Tendencia Mensual (Salario vs Comisión)</h3>
+                        <div style="height: 250px; position: relative;">
+                            <canvas id="adminTrendChart"></canvas>
                         </div>
                     </div>
-                    <div class="calendar-grid" id="calendar-grid">
-                        <!-- JS populated -->
+                    <div class="glass-card chart-container">
+                        <h3>Inversión por Proyecto</h3>
+                        <div style="height: 250px; position: relative;">
+                            <canvas id="adminProjectChart"></canvas>
+                        </div>
                     </div>
-                </div> <!-- Chart Section -->
+                </div>
 
 
                 <!-- ADMIN: Moved Original Chart to only show for Employees (will act as toggle) -->
