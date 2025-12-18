@@ -285,7 +285,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // TOGGLE VIEW: Show Admin Grid, Hide Default
         defaultStatsGrid.classList.add('hidden');
         // Hide default chart container
-        if (defaultChartView) defaultChartView.classList.add('hidden');
+        const employeeChartView = document.getElementById('employee-income-chart-view');
+        if (employeeChartView) employeeChartView.classList.add('hidden');
         // Hide default Invoices Table
         invoicesList.closest('.table-container').classList.add('hidden');
 
@@ -562,7 +563,13 @@ document.addEventListener('DOMContentLoaded', () => {
         adminStatsGrid.classList.add('hidden');
         if (adminChartsView) adminChartsView.classList.add('hidden');
         if (adminChartsSection) adminChartsSection.classList.add('hidden'); // Hide Charts for employees
-        document.querySelector('.dashboard-content .chart-container').classList.remove('hidden');
+
+        // Hide Admin Project Summary (Client Portfolio) logic
+        document.getElementById('admin-project-summary-view').classList.add('hidden');
+
+        // Show Employee Chart
+        const employeeChartView = document.getElementById('employee-income-chart-view');
+        if (employeeChartView) employeeChartView.classList.remove('hidden');
 
         // Restore Default Table
         invoicesList.closest('.table-container').classList.remove('hidden');
