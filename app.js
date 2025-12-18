@@ -165,7 +165,11 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error(error);
             // SHOW ERROR VIEW
             dashboardView.classList.add('hidden');
-            document.getElementById('error-view').classList.remove('hidden');
+            const errorView = document.getElementById('error-view');
+            errorView.classList.remove('hidden');
+            // DEBUG: Show actual error
+            const errorMsg = errorView.querySelector('p');
+            if (errorMsg) errorMsg.innerHTML = `Error: ${error.message}<br><small>${error.stack}</small>`;
         }
     }
 
@@ -356,7 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const adminMonthTotal = document.getElementById('admin-month-total');
         const adminYearProj = document.getElementById('admin-year-proj');
-        const adminCommRatio = document.getElementById('admin-comm-ratio');
+        // const adminCommRatio = document.getElementById('admin-comm-ratio'); // REMOVED
         const adminTotalEmployees = document.getElementById('admin-total-employees');
 
         // Filter current month data
@@ -590,7 +594,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // ENSURE DEFAULT VIEW IS VISIBLE
         defaultStatsGrid.classList.remove('hidden');
         adminStatsGrid.classList.add('hidden');
-        adminChartsView.classList.add('hidden');
+        if (adminChartsView) adminChartsView.classList.add('hidden');
         const summaryView = document.getElementById('admin-project-summary-view');
         if (summaryView) summaryView.classList.add('hidden');
 
