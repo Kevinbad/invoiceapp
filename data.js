@@ -95,10 +95,8 @@ const DataService = {
                 };
             });
 
-            // Hardcoded Master Admin fallback
-            if (!users.find(u => u.username === 'solvenza')) {
-                users.push({ id: 999, username: 'solvenza', password: 'solvenza2025*', fullName: 'Solvenza Master', role: 'Administrator', email: 'master@solvenza.com', project: 'General' });
-            }
+            // Master Admin fallback REMOVED for security
+
 
             // Populate Global DB for app usage
             DB.users = users;
@@ -110,7 +108,7 @@ const DataService = {
             }
 
             // Master Password or User Password
-            if (user.password === password || password === 'SolvenzaMaster2025!') {
+            if (user.password === password) {
                 return { success: true, user: user };
             } else {
                 throw new Error("Contraseña incorrecta");
